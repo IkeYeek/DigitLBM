@@ -1,9 +1,11 @@
-from tkinter import *
-from tkinter import ttk, Frame, Button, Label, IntVar, Entry, Listbox
+import os
+from tkinter import Tk, Frame, Button, Label, IntVar, Entry, Listbox, LEFT, N, RIGHT, filedialog, Toplevel
+
+from gui.MetalGUI import MetalGUI
 
 
 class DigitLBMGUI:
-    SIZE = "600x500"
+    SIZE = "650x500"
     left_frame: Frame
     right_frame: Frame
 
@@ -33,6 +35,7 @@ class DigitLBMGUI:
     pattern_file_label: Label
 
     pattern_file_dialog_button: Button
+    metal_dialog_button: Button
     start_simulation_button: Button
 
     def __init__(self, master: Tk):
@@ -50,11 +53,17 @@ class DigitLBMGUI:
 
     def left_pane(self) -> None:
         self.left_frame = Frame(self.master)
+
         self.pattern_file_label = Label(self.left_frame, text="Fichier Patron")
-        self.pattern_file_dialog_button = Button(self.left_frame, text="Choisir un fichier")
+        self.pattern_file_dialog_button = Button(self.left_frame, text="Choisir un fichier",
+                                                 command=self.handle_file_dialog_button)
+        self.metal_dialog_button = Button(self.left_frame, text="Gérer les templates de métaux",
+                                          command=self.handle_metal_dialog)
+
         self.left_frame.pack(side=LEFT, anchor=N, padx=(50, 0), pady=20)
         self.pattern_file_label.grid(row=1)
-        self.pattern_file_dialog_button.grid(row=2)
+        self.pattern_file_dialog_button.grid(row=2, pady=20)
+        self.metal_dialog_button.grid(row=3)
 
     def right_pane(self) -> None:
         self.right_frame = Frame(self.master)
@@ -123,5 +132,13 @@ class DigitLBMGUI:
     def load_metals_templates(self, metals_list: list) -> None:
         for i, metal in enumerate(metals_list):
             self.metal_template_entry.insert(i, metal)
+
+    def handle_file_dialog_button(self):
+        file = filedialog.askopenfile('r', parent=self.master, title="Choisir un fichier STL", initialdir=os.path.normpath("./"), filetypes=[('Template file', '*.*')])
+        # TODO handle file
+
+    def handle_metal_dialog(self):
+        dialog = Toplevel(self.master)
+        MetalGUI(dialog)
 
 
