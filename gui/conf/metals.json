@@ -1,0 +1,16 @@
+{
+  "alluminium": {
+    "abs": 5,
+    "mp": 8
+  },
+
+  "tungstene": {
+    "abs": 4,
+    "mp": 7
+  },
+
+  "fer": {
+    "abs": 4,
+    "mp": 2
+  }
+}
