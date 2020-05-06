@@ -13,7 +13,7 @@ class SimuGUI:
                             text="Puissance Laser: %d; Taille spot: %d; Taille moyenne grain: %d; randomisation: %d; Absorbance: %d; Energie req! %d"
                                  % (params["laser_power"], params["spot_size"], params["mean_beam_size"], params["randomness"],
                                     params["beam_absorbancy"], params["melting_point"]))
-        self.file_content = Label(self.master, text=params["pattern_file"].read())
+        self.file_content = Label(self.master, text=params["pattern_file"].name)
 
         self.params.pack()
         self.file_content.pack()

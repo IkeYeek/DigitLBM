@@ -1,14 +1,6 @@
 {
  "alluminium": {
-  "Absorbance": 1,
-  "Point de fusion": 1
- },
- "tungstene": {
-  "Absorbance": 7,
-  "Point de fusion": 5
- },
- "fer": {
-  "Absorbance": 4,
-  "Point de fusion": 1
+  "Absorbance": 5,
+  "Point de fusion": 6
  }
 }

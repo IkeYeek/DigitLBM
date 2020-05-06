@@ -1,7 +1,8 @@
 import json
 import os
-from tkinter import Label, IntVar, W, Frame, Entry, N, E, Button, Tk
-from tkinter.messagebox import showinfo
+from tkinter import Label, IntVar, W, Frame, Entry, N, E, Button, Tk, simpledialog
+from tkinter.messagebox import showinfo, showerror
+from tkinter.simpledialog import SimpleDialog
 
 
 class MetalGUI:
@@ -20,8 +21,8 @@ class MetalGUI:
         self.metals = params["metals"]
         self.metals_metadata = {}
         self.prepare_metals()
-        self.show_metals()
-        Button(self.master, text="Sauvegarder", command=self.save).grid()
+        self.update_ui()
+
 
     def prepare_metals(self) -> None:
         """
@@ -33,17 +34,23 @@ class MetalGUI:
             curr_metal['Point de fusion'].set(self.metals[metal]['Point de fusion'])
             self.metals[metal] = curr_metal
 
-    def show_metals(self) -> None:
+    def update_ui(self) -> None:
         """
         S'occupe de l'affichage des Label et Entry
         """
+        for widget in self.master.winfo_children():
+            widget.destroy()
         for i, metal in enumerate(self.metals):
             Label(self.master, text=metal + ':').grid(row=(len(self.metals) * i), sticky=W)
+            Button(self.master, text="-", command=lambda arg=metal: self.remove_metal(arg)).grid()
 
             for j, car in enumerate(self.metals[metal]):
                 Label(self.master, text=car + ':').grid(row=(len(self.metals) * i) + j+1, column=1, sticky=W)
                 Entry(self.master,
                       textvariable=self.metals[metal][car]).grid(row=(len(self.metals) * i + j+1), column=2)
+        Button(self.master, text="+", command=self.add_metal).grid()
+        Button(self.master, text="Sauvegarder", command=self.save).grid()
+        self.master.lift()
 
     def save(self) -> None:
         """
@@ -63,5 +70,17 @@ class MetalGUI:
         showinfo("Sauvegarde des template de métaux", "Sauvegarde des templates des métaux terminée")
         self.close_handler(__class__)
         self.update_handler()
+
+    def add_metal(self):
+        metal = simpledialog.askstring("Ajout d'un métal", "Nommez le métal (le nom doit être nique)")
+        if metal not in self.metals:
+            self.metals[metal] = {'Absorbance': IntVar(), 'Point de fusion': IntVar()}
+            self.update_ui()
+        else:
+            showerror("Impossible de rajouter le template", "%s déjà utilisé comme nom de métal" % (metal,))
+
+    def remove_metal(self, metal):
+        self.metals.pop(metal)
+        self.update_ui()
 
 

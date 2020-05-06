@@ -177,6 +177,7 @@ class DigitLBMGUI:
         """
         file = filedialog.askopenfile('r', parent=self.master, title="Choisir un fichier STL", initialdir=os.path.normpath(
             "/"), filetypes=[('Template file', '*.*')])
+        self.pattern_file_label['text'] = file.name
         self.pattern_file = file
         # TODO handle file
 
