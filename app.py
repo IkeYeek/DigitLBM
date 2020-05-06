@@ -1,5 +1,5 @@
 import os
-from tkinter import Tk
+from tkinter import Tk, PhotoImage
 from gui.DigitLBMGUI import DigitLBMGUI
 
 
@@ -14,5 +14,5 @@ if __name__ == '__main__':
     check_metal_conf_exists()
     app = Tk()
     gui = DigitLBMGUI(app)
-    app.iconbitmap(os.path.join('.', 'conf', 'LBM_logo.ico'))
+    app.iconphoto(True, PhotoImage(file=os.path.normpath(os.path.join('.', 'conf', 'LBM_logo.png'))))
     app.mainloop()

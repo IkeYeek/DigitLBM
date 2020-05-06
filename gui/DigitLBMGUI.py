@@ -1,7 +1,8 @@
 import json
 import os
 from io import TextIOWrapper
-from tkinter import Tk, Frame, Button, Label, IntVar, Entry, Listbox, LEFT, N, RIGHT, filedialog, Toplevel, Event, END
+from tkinter import Tk, Frame, Button, Label, IntVar, Entry, Listbox, LEFT, N, RIGHT, filedialog, Toplevel, Event, END, \
+    PhotoImage
 from tkinter.messagebox import showerror
 
 from gui.MetalGUI import MetalGUI
@@ -218,7 +219,7 @@ class DigitLBMGUI:
             """
             try:
                 dialog = Toplevel(self.master)
-                dialog.iconbitmap(os.path.join('.', 'conf', 'LBM_logo.ico'))
+                dialog.iconphoto(True, PhotoImage(file=os.path.normpath(os.path.join('.', 'conf', 'LBM_logo.png'))))
                 self.opened_gui[gui_class] = dialog
                 dialog.protocol("WM_DELETE_WINDOW", lambda arg=gui_class: self.close(arg))
                 gui_class(dialog, params)
