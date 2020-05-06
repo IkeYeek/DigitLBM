@@ -4,6 +4,8 @@ from tkinter import Label, IntVar, W, Frame, Entry, N, E, Button, Tk, simpledial
 from tkinter.messagebox import showinfo, showerror
 from tkinter.simpledialog import SimpleDialog
 
+from gui.wrappers.StringDialogWrapper import StringDialogWrapper
+
 
 class MetalGUI:
     """
@@ -72,12 +74,14 @@ class MetalGUI:
         self.update_handler()
 
     def add_metal(self):
-        metal = simpledialog.askstring("Ajout d'un métal", "Nommez le métal (le nom doit être nique)")
-        if metal not in self.metals:
+        metal = StringDialogWrapper.ask_string("Ajout d'un métal", "Nommez le métal (le nom doit être nique)")
+        if len(metal) > 0 and metal not in self.metals:
             self.metals[metal] = {'Absorbance': IntVar(), 'Point de fusion': IntVar()}
-            self.update_ui()
-        else:
+        elif len(metal) > 0:
             showerror("Impossible de rajouter le template", "%s déjà utilisé comme nom de métal" % (metal,))
+        else:
+            showerror("Impossible de rajouter le template", "Le nom est vide!")
+        self.update_ui()
 
     def remove_metal(self, metal):
         self.metals.pop(metal)

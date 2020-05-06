@@ -163,6 +163,10 @@ class DigitLBMGUI:
             self.metal_template_entry.insert(i, metal)
 
     def metal_template_entry_change(self, event: Event) -> None:
+        """
+        event handler d'un changement dans le template de métal séléctionné
+        :param event:
+        """
         w = event.widget
         if len(w.curselection()) > 0:
             index = int(w.curselection()[0])
@@ -214,6 +218,7 @@ class DigitLBMGUI:
             """
             try:
                 dialog = Toplevel(self.master)
+                dialog.iconbitmap(os.path.join('.', 'conf', 'LBM_logo.ico'))
                 self.opened_gui[gui_class] = dialog
                 dialog.protocol("WM_DELETE_WINDOW", lambda arg=gui_class: self.close(arg))
                 gui_class(dialog, params)
