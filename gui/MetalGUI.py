@@ -1,8 +1,7 @@
 import json
 import os
-from tkinter import Label, IntVar, W, Frame, Entry, N, E, Button, Tk, simpledialog
+from tkinter import Label, IntVar, W, Entry, Button, Tk
 from tkinter.messagebox import showinfo, showerror
-from tkinter.simpledialog import SimpleDialog
 
 from gui.wrappers.StringDialogWrapper import StringDialogWrapper
 
@@ -74,7 +73,7 @@ class MetalGUI:
         self.update_handler()
 
     def add_metal(self):
-        metal = StringDialogWrapper.ask_string("Ajout d'un métal", "Nommez le métal (le nom doit être nique)")
+        metal = StringDialogWrapper.ask_string("Ajout d'un métal", "Nommez le métal (le nom doit être unique)")
         if len(metal) > 0 and metal not in self.metals:
             self.metals[metal] = {'Absorbance': IntVar(), 'Point de fusion': IntVar()}
         elif len(metal) > 0:

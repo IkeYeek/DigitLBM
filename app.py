@@ -16,3 +16,4 @@ if __name__ == '__main__':
     gui = DigitLBMGUI(app)
     app.iconphoto(True, PhotoImage(file=os.path.normpath(os.path.join('.', 'conf', 'LBM_logo.png'))))
     app.mainloop()
+
