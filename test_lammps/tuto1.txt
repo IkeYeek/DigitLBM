@@ -1,0 +1,48 @@
+# Input file for bi-layered crystal, Nickle and Aluminum, relaxed
+# Tikelia Wright, July 2012
+
+# ------------------------ INITIALIZATION ----------------------
+clear
+units 		metal
+dimension	3
+boundary	p	p	p
+atom_style	atomic
+
+
+# ----------------------- ATOM DEFINITION -----------------------
+
+lattice         fcc 3.52
+region		upper block 0 54 0 54 0 7
+lattice         fcc  4.05
+region		lower block 0 47 0 47  6.5 13 
+region		whole union 2 upper lower
+
+create_box	2 whole
+lattice 	fcc 3.52 orient x 1 0 0 orient y 0 1 0 orient z 0 0 1
+create_atoms	1 region upper
+lattice 	fcc 4.05 origin 0 0 .247 orient x 1 0 0 orient y 0 1 0 orient z 0 0 1
+create_atoms	2 region lower
+
+
+# ------------------------ FORCE FIELDS -----------------------
+pair_style	eam/alloy
+pair_coeff * * Mishin-Ni-Al-2009.eam.alloy Ni Al
+
+#---------------------------Settings----------------------------
+compute csym all centro/atom fcc
+compute eng all pe/atom 
+compute eatoms all reduce sum c_eng
+compute strs all stress/atom
+
+#----------------------Run Minimization-------------------------
+reset_timestep	0
+thermo 10
+thermo_style custom step pe lx ly lz press pxx pyy pzz c_eatoms 
+dump 1 all custom 10 dump.comp.* id type xs ys zs c_csym c_eng c_strs[1] c_strs[2] c_strs[3]
+min_style cg
+minimize 1e-15 1e-15 5000 5000
+
+######################################
+
+# SIMULATION DONE
+print "All done"
