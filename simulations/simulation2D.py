@@ -11,16 +11,17 @@ from simulations.simulation2d.Grid import Grid
 from simulations.simulation2d.Simulation import Simulation
 
 if __name__ == '__main__':
-    grid = Grid(4)
+    grid = Grid(2000)
 
-    grid.populate(1, 1)
+    grid.populate(1, 10)
     mooves = [
         (0, 0),
         (0, 3),
         (3, 3),
         (3, 0),
-        (0, 0)
+        (0, 0),
+        (5, 456)
     ]
     simulation = Simulation(mooves, grid, 1, 1, 1)
-    simulation.simulate()
-    grid.show_grid()
+    # simulation.simulate()
+    # grid.show_grid()

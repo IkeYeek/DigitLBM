@@ -1,8 +1,13 @@
 #!/usr/bin/python3.8
 import collections
 from random import randint
+from threading import Thread
 
 from simulations.simulation2d.Particle import Particle
+
+
+class Populator(Thread):
+    pass
 
 
 class Grid:
