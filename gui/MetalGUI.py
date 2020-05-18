@@ -6,7 +6,7 @@ from tkinter.messagebox import showinfo, showerror
 from gui.wrappers.StringDialogWrapper import StringDialogWrapper
 
 
-class MetalGUI:
+class MetalGUI(object):
     """
     Classe de la fenêtre de selections des métaux
     """
@@ -23,7 +23,6 @@ class MetalGUI:
         self.metals_metadata = {}
         self.prepare_metals()
         self.update_ui()
-
 
     def prepare_metals(self) -> None:
         """
@@ -72,7 +71,12 @@ class MetalGUI:
         self.close_handler(__class__)
         self.update_handler()
 
-    def add_metal(self):
+    def add_metal(self) -> None:
+        """
+        Se charge d'ouvrir la fenêtre de dialogue pour renseigner le nom d'un nouveau métal
+        L'enregistre ensuite dans la mémoire (tant que Sauvegarder n'a pas été utilisé)
+        Recharge l'interface du la fenêtre des métaux pour prendre en compte les changements
+        """
         metal = StringDialogWrapper.ask_string("Ajout d'un métal", "Nommez le métal (le nom doit être unique)")
         if len(metal) > 0 and metal not in self.metals:
             self.metals[metal] = {'Absorbance': IntVar(), 'Point de fusion': IntVar()}
@@ -82,7 +86,11 @@ class MetalGUI:
             showerror("Impossible de rajouter le template", "Le nom est vide!")
         self.update_ui()
 
-    def remove_metal(self, metal):
+    def remove_metal(self, metal: str) -> None:
+        """
+        Se charge de supprimer un métal
+        :param metal: le nom du métal a supprimer
+        """
         self.metals.pop(metal)
         self.update_ui()
 

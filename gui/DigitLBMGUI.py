@@ -9,12 +9,12 @@ from gui.MetalGUI import MetalGUI
 from gui.SimuGUI import SimuGUI
 
 
-class DigitLBMGUI:
+class DigitLBMGUI(object):
     """
     Classe de la fenêtre principale
     """
-    MAXW=650
-    MAXH=500
+    MAXW = 800
+    MAXH = 500
     SIZE = "%dx%d" % (MAXW, MAXH)
     left_frame: Frame
     right_frame: Frame
@@ -202,8 +202,7 @@ class DigitLBMGUI:
                               "randomness": self.random_in_beam_size_var.get(), "beam_absorbancy": self.beam_absorbency_var.get(),
                               "melting_point": self.melting_point_var.get(), "pattern_file": self.pattern_file})
 
-
-    def open_unique(self, gui_class: type, params={}) -> None:
+    def open_unique(self, gui_class: type, params: dict) -> None:
         """
         permet de prévenir de l'ouverture multiples d'une même sous fenêtre (ex: ouvrir 2x la fenêtre des templates de
          métaux), en cas d'ouverture d'une fenêtre déjà ouverte, celle-ci est remontée

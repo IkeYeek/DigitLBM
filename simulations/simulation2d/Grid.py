@@ -10,15 +10,29 @@ class Populator(Thread):
     pass
 
 
-class Grid:
+class Grid(object):
+    """
+    Classe représentant le "grid" 2D, c'est-à-dire un damier de x*x qui contient tous les grains
+    Il est possible de retrouver les coordonnées d'une particule à partir de cette dernière (i, j du point le plus au nord ouest)
+        et également de retrouver une particule a partir d'une coordonnée du grid
+    """
     def __init__(self, size: int):
+        """
+        Initialise le grid
+        :param size: la taille du grid (x pour x*x)
+        """
         self.grid = {}
         self.size = size
         for i in range(self.size):
             for j in range(self.size):
                 self.grid[i, j] = None
 
-    def show_grid(self):
+    def show_grid(self) -> None:
+        """
+        Utile uniquement pour debug des petits grid, sous peine de surement faire planter le PC étant donné la taile supposée de ce dernier
+        Affich le grid dans la console
+        :return:
+        """
         last_i = -1
         for i, j in self.grid:
             if i != last_i:
@@ -30,6 +44,11 @@ class Grid:
                 print(" %s " % self.grid[i, j], end='')
 
     def can_fit(self, particle: Particle) -> bool:
+        """
+        Vérifie qu'une particule de taille n aux coordonnées (i, j) peut rentrer
+        :param particle: la particule a tester, déjà paramétrée
+        :return: True si oui, False si non
+        """
         fits = True
         for i in range(particle.size):
             for j in range(particle.size):
@@ -40,11 +59,22 @@ class Grid:
             return fits
 
     def fit(self, particle: Particle) -> None:
+        """
+        Place une particule sur le grid
+        :param particle: la particule a placer
+        """
         for i in range(particle.size):
             for j in range(particle.size):
                 self.grid[particle.i + i, particle.j + j] = particle
 
     def populate(self, min_size=1, max_size=1) -> None:
+        """
+        Cette méthode sert à remplir le grid, elle est amenée à évoluer vers une simulation + réaliste
+        Pour le moment, elle place des particules de taille min_size <= size <= max_size sans laisser de trous
+        une particule qui ne fit pas est réduite jusqu'à fit
+        :param min_size: la taille minimale des particules
+        :param max_size: la taille maximale des particules
+        """
         for i in range(self.size):
             for j in range(self.size):
                 size = randint(min_size, max_size)
@@ -60,12 +90,16 @@ class Grid:
                     Particle.avoid()
 
     def particle_at(self, i: int, j: int) -> Particle:
+        """
+        renvoie la particule aux coordonnées (i, j) si elle existe
+        """
         if 0 <= i < self.size and 0 <= j < self.size:
             return self.grid[(i, j)]
+        else:
+            raise Exception('Coordonnée impossible (%d, %d)' % (i, j))
 
 
-
-"""
+""" peut servir
 class Grid:
     def __init__(self, size: int):
         self.grid = {}
