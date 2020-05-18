@@ -89,14 +89,14 @@ class Grid(object):
                 if not fitted:
                     Particle.avoid()
 
-    def particle_at(self, i: int, j: int) -> Particle:
+    def particle_at(self, ij: tuple) -> Particle:
         """
         renvoie la particule aux coordonnées (i, j) si elle existe
         """
-        if 0 <= i < self.size and 0 <= j < self.size:
-            return self.grid[(i, j)]
+        if 0 <= ij[0] < self.size and 0 <= ij[1] < self.size:
+            return self.grid[ij]
         else:
-            raise Exception('Coordonnée impossible (%d, %d)' % (i, j))
+            raise Exception('Coordonnée impossible (%d, %d)' % ij)
 
 
 """ peut servir

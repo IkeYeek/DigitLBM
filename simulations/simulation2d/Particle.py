@@ -31,7 +31,7 @@ class Particle(object):
         méthode tostring, aucune autre réelle utilitée que le debug
         :return: peut varier, soit l'énergie, soit le numéro, ou autre selon les besoins
         """
-        return str(self.energy)
+        return str(self.energy) if self.energy > 0 else "x"
 
     def accept(self, power: int, speed: int) -> None:
         """
@@ -41,8 +41,8 @@ class Particle(object):
         :param speed: la vitesse du laser dans la simulation
         """
         self.energy += power
-        print("%d at %d;%d accepted %dMW of power with %d of speed, energy : %d" %
-              (self.id, self.i, self.j, power, speed, self.energy))
+        # print("%d at %d;%d accepted %dMW of power with %d of speed, energy : %d" %
+        # (self.id, self.i, self.j, power, speed, self.energy))
 
     @staticmethod
     def avoid() -> None:

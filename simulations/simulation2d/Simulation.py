@@ -1,8 +1,11 @@
 #!/usr/bin/python3.8
+import math
+
 from simulations.simulation2d.Grid import Grid
 
 
 class Simulation(object):
+
     def __init__(self, schema: list, grid: Grid, power: int, speed: int, spot_size: int):
         """
         initialise les paramètres de la simulation
@@ -16,6 +19,9 @@ class Simulation(object):
         self.grid = grid
         self.power = power
         self.speed = speed
+        self.step = 0
+        if spot_size&1 != 1:
+            spot_size += 1
         self.spot_size = spot_size
 
     def simulate(self) -> None:
@@ -29,6 +35,7 @@ class Simulation(object):
             next_position = schema.pop(0)
             self.go_through(last_position, next_position, len(schema) == 0)
             last_position = next_position
+        print("simulation done in %d steps" % (self.step, ))
 
     def go_through(self, origin: tuple, destination: tuple, last=False) -> None:
         """
@@ -40,9 +47,29 @@ class Simulation(object):
         """
         points = Simulation.get_traveled_points(origin, destination, last)
         for point in points:
-            self.grid.particle_at(point[0], point[1]).accept(self.power, self.speed)
-            for i in range(1, self.spot_size):
-                pass
+            self.spot(point)
+
+    def spot(self, point) -> None:
+        """
+        implementation of the laser spot
+        :param point: the point
+        """
+        i, j = point[0], point[1]
+        offset = (self.spot_size-1) / 2
+
+        for n in range(self.spot_size):
+            for k in range(self.spot_size):
+                self.step += 1
+                if self.step % 100000 == 0:
+                    print("step %d for %d;%d" % (self.step, i, j))
+                x = i + n - offset
+                y = j + k - offset
+                if ((x - i) ** 2) + ((y - j) ** 2) < (self.spot_size/2) ** 2:
+                    self.apply(x, y)
+
+    def apply(self, i, j):
+        if 0 <= i < self.grid.size and 0 <= j < self.grid.size:
+            self.grid.particle_at((i, j)).accept(self.power, self.speed)
 
     @staticmethod
     def get_traveled_points(origin: tuple, destination: tuple, last) -> list:
