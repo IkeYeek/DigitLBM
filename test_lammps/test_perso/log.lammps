@@ -1,10 +1,6 @@
-LAMMPS (5 May 2020)
-OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:94)
-  using 1 OpenMP thread(s) per MPI task
+LAMMPS (3 Mar 2020)
 # ------------------------ INITIALIZATION ----------------------
 clear
-OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:94)
-  using 1 OpenMP thread(s) per MPI task
 units 		metal
 dimension	3
 boundary	p	p	p
@@ -27,11 +23,11 @@ lattice 	    fcc 1 orient x 1 0 0 orient y 0 1 0 orient z 0 0 1
 Lattice spacing in x,y,z = 1 1 1
 create_atoms	1 region upper
 Created 4000 atoms
-  create_atoms CPU = 0.00165831 secs
+  create_atoms CPU = 0.00259709 secs
 
 # ------------------------ FORCE FIELDS -----------------------
 pair_style	granular
-pair_coeff * * hooke 1000.0 50.0 tangential linear_nohistory 1.0 0.4 damping mass_velocity
+pair_coeff * * hooke 1000.0 50.0 tangential linear_history 500.0 1.0 0.4 damping mass_velocity
 
 #---------------------------Settings----------------------------
 #compute csym all centro/atom fcc
@@ -58,9 +54,7 @@ dump     1 all custom 250 dump.comp.* id x y z
 #min_style cg
 #minimize 1e-15 1e-15 5000 5000
 
-######################################
 
-# SIMULATION DONE
-print "All done"
-All done
-Total wall time: 0:00:00
+run     20000
+ERROR: Pair granular requires ghost atoms store velocity (../pair_granular.cpp:974)
+Last command: run     20000
