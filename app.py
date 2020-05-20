@@ -14,5 +14,5 @@ if __name__ == '__main__':
     check_metal_conf_exists()
     app = Tk()
     gui = DigitLBMGUI(app)
-    app.iconbitmap(os.path.join('.', 'conf', 'LBM_logo.ico'))
+    #app.iconbitmap(os.path.join('.', 'conf', 'LBM_logo.ico'))
     app.mainloop()

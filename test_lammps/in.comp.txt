@@ -69,10 +69,10 @@ fix def1 all print 100 "${p1} ${p2} ${p3} ${p4}" file Al_comp_100.def1.txt scree
 #dump_modify     1 element Al
 
 # Dump to cfg for Ovito post processing
-dump     1 all custom 250 dump.comp.* id type xs ys zs c_csym c_peratom fx fy fz
+# dump     1 all custom 250 dump.comp.* id type xs ys zs c_csym c_peratom fx fy fz
 
-# Dump for PAraview post-processing
-dump dumpvtk all vtk 250 dump.comp_*.vtk if type xs ys zs c_csym c_peratom fx fy fz
+# Dump for Paraview post-processing
+dump    1 all vtk 250 dump.comp_*.vtk id type xs ys zs c_csym c_peratom fx fy fz
 
 # Display thermo
 thermo 	1000
