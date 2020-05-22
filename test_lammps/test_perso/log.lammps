@@ -7,46 +7,51 @@ OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:94
 # ----------------------- VARIABLES DEFINITION -----------------------
 variable name string dump_laser
 
-
 # ------------------------ INITIALIZATION ----------------------
 
-units 		metal
+units 		si
 dimension	3
-boundary	p   p   f
+boundary	f   f   f
 atom_style	sphere
 
 
 # ----------------------- SYSTEM DEFINITION -----------------------
-region		    mainbox block 0 100 0 100 0 50
+region		    mainbox block 0 50 0 50 0 50 units box
 create_box	    1 mainbox
-Created orthogonal box = (0 0 0) to (100 100 50)
+Created orthogonal box = (0 0 0) to (50 50 50)
   1 by 1 by 1 MPI processor grid
 
+fix		walls all wall/gran/region hooke/history 		4000.0 NULL 100.0 NULL 0.5 1 region mainbox
+#fix Zwall all wall/gran granular hertz/material 1e5 1e3 0.3 tangential mindlin NULL 1.0 0.5 zplane 0 NULL
+#fix Xwall all wall/gran granular hertz/material 1e5 1e3 0.3 tangential mindlin NULL 1.0 0.5 zplane 0 NULL
+#fix Ywall all wall/gran granular hertz/material 1e5 1e3 0.3 tangential mindlin NULL 1.0 0.5 zplane 0 NULL
 
 comm_modify vel yes
 
-
 #  ---------------------- ATOM DEFINITION -------------------------
-
 
 fix 1 all nve/sphere
 fix 2 all gravity 1.0 vector 0 0 -1
 
-fix insertion all pour 1000 1 1234 region mainbox
-Particle insertion: 238732 every 102 steps, 1000 by step 1
+neighbor 3 bin
+neigh_modify	delay 0 every 1 check yes
+
+
+fix insertion all pour 1000 1 1234 region mainbox diam range 0.1 1
+Particle insertion: 59683 every 1000000000 steps, 1000 by step 1
+#fix insertion all pour 1000 1 1234 region mainbox diam range 0.00002 0.00005
 #FIX id groupID "ajout" nb type randSeed REGION regionID
 
 
-comm_modify vel yes
-
-#fix walls all wall/gran/region granular hertz/material 1e5 1e3 0.3 tangential mindlin NULL 1.0 0.5 rolling sds 500.0 200.0 0.5 twisting marshall region mainbox
-fix Zwall all wall/gran granular hertz/material 1e5 1e3 0.3 tangential mindlin NULL 1.0 0.5 zplane 0 NULL
-#fix Xwall all wall/gran granular hertz/material 1e5 1e3 0.3 tangential mindlin NULL 1.0 0.5 zplane 0 NULL
-#fix Ywall all wall/gran granular hertz/material 1e5 1e3 0.3 tangential mindlin NULL 1.0 0.5 zplane 0 NULL
-
 # ------------------------ FORCE FIELDS -----------------------
-pair_style	granular
-pair_coeff * * hooke 1000.0 50.0 tangential linear_history 500.0 1.0 0.4 damping mass_velocity
+
+#pair_style	granular
+###pair_coeff * * hooke 1000.0 50.0 tangential linear_history 500.0 1.0 0.4 damping mass_velocity
+#pair_coeff      1 * jkr 1000.0 50.0 0.3 10 tangential mindlin 800.0 1.0 0.5 rolling sds 500.0 200.0 0.5 twisting marshall
+
+
+pair_style	hybrid gran/hooke 4000.0 NULL 100.0 NULL 0.5 1
+pair_coeff	* * gran/hooke
 
 #--------------------------- OUTPUT SETTINGS ----------------------------
 #compute csym all centro/atom fcc
@@ -55,161 +60,161 @@ pair_coeff * * hooke 1000.0 50.0 tangential linear_history 500.0 1.0 0.4 damping
 #compute strs all stress/atom
 
 #----------------------Run Minimization-------------------------
-timestep 0.01
+timestep 0.001
 
-thermo_style    custom step cpu atoms ke
-thermo_modify   lost warn
+thermo_style    custom step cpu atoms
+thermo_modify   lost ignore
 thermo 100
 #thermo_style custom step pe lx ly lz press pxx pyy pzz c_eatoms
 
-dump     1 all custom 200 ${name}.dump id type mass radius xs ys zs
-dump     1 all custom 200 dump_laser.dump id type mass radius xs ys zs
+dump     1 all custom 100 ${name}.dump id type mass diameter element xs ys zs
+dump     1 all custom 100 dump_laser.dump id type mass diameter element xs ys zs
 
 #min_style cg
 #minimize 1e-15 1e-15 5000 5000
 
 run     10000
 Neighbor list info ...
-  update every 1 steps, delay 10 steps, check yes
+  update every 1 steps, delay 0 steps, check yes
   max neighbors/atom: 2000, page size: 100000
-  master list distance cutoff = 3
-  ghost atom cutoff = 3
-  binsize = 1.5, bins = 67 67 34
+  master list distance cutoff = 4
+  ghost atom cutoff = 4
+  binsize = 2, bins = 25 25 25
   1 neighbor lists, perpetual/occasional/extra = 1 0 0
-  (1) pair granular, perpetual
-      attributes: half, newton on, size, history
+  (1) pair gran/hooke, perpetual
+      attributes: half, newton on, size
       pair build: half/size/bin/newton
       stencil: half/bin/3d/newton
       bin: standard
-Per MPI rank memory allocation (min/avg/max) = 6.536 | 6.536 | 6.536 Mbytes
-Step CPU Atoms KinEng 
-       0            0        0           -0 
-     100  0.032784059        0           -0 
-     200  0.034644306        0           -0 
-     300  0.034885662        0           -0 
-     400  0.038374719        0           -0 
-     500  0.038918152        0           -0 
-     600  0.041128193        0           -0 
-     700  0.041472921        0           -0 
-     800  0.041882481        0           -0 
-     900  0.042102515        0           -0 
-    1000  0.042386314        0           -0 
-    1100  0.042583866        0           -0 
-    1200  0.042842298        0           -0 
-    1300  0.043037558        0           -0 
-    1400  0.043274069        0           -0 
-    1500   0.04345465        0           -0 
-    1600  0.043677521        0           -0 
-    1700  0.043852538        0           -0 
-    1800  0.044102896        0           -0 
-    1900  0.044289583        0           -0 
-    2000  0.044557668        0           -0 
-    2100  0.045236469        0           -0 
-    2200  0.045507149        0           -0 
-    2300  0.045688553        0           -0 
-    2400  0.045908724        0           -0 
-    2500  0.046091715        0           -0 
-    2600  0.046278613        0           -0 
-    2700  0.046518252        0           -0 
-    2800  0.046721336        0           -0 
-    2900  0.046893759        0           -0 
-    3000  0.056729067        0           -0 
-    3100  0.057397489        0           -0 
-    3200  0.057797066        0           -0 
-    3300  0.058012324        0           -0 
-    3400  0.059816708        0           -0 
-    3500   0.06002591        0           -0 
-    3600  0.061818175        0           -0 
-    3700  0.062061504        0           -0 
-    3800  0.062329555        0           -0 
-    3900  0.062530045        0           -0 
-    4000  0.062768962        0           -0 
-    4100  0.069113387        0           -0 
-    4200  0.069638856        0           -0 
-    4300  0.069833177        0           -0 
-    4400  0.070071474        0           -0 
-    4500  0.070267322        0           -0 
-    4600  0.070499785        0           -0 
-    4700  0.070658227        0           -0 
-    4800  0.070845949        0           -0 
-    4900  0.070995531        0           -0 
-    5000  0.071188909        0           -0 
-    5100  0.071349002        0           -0 
-    5200  0.071538556        0           -0 
-    5300  0.071702501        0           -0 
-    5400  0.071898772        0           -0 
-    5500  0.072065242        0           -0 
-    5600  0.072661703        0           -0 
-    5700  0.072824431        0           -0 
-    5800  0.073018704        0           -0 
-    5900  0.073203348        0           -0 
-    6000  0.073416694        0           -0 
-    6100  0.073594435        0           -0 
-    6200  0.073795625        0           -0 
-    6300  0.073986411        0           -0 
-    6400  0.074227156        0           -0 
-    6500  0.074398878        0           -0 
-    6600  0.074645708        0           -0 
-    6700  0.074852304        0           -0 
-    6800  0.075175156        0           -0 
-    6900  0.075411351        0           -0 
-    7000  0.075748012        0           -0 
-    7100  0.075942278        0           -0 
-    7200  0.076176813        0           -0 
-    7300  0.076365309        0           -0 
-    7400  0.076643427        0           -0 
-    7500  0.076823831        0           -0 
-    7600  0.077598443        0           -0 
-    7700  0.078080761        0           -0 
-    7800   0.07837913        0           -0 
-    7900  0.078591893        0           -0 
-    8000  0.079353068        0           -0 
-    8100  0.079566074        0           -0 
-    8200   0.07988265        0           -0 
-    8300  0.080039744        0           -0 
-    8400   0.08023688        0           -0 
-    8500   0.08045352        0           -0 
-    8600  0.080648425        0           -0 
-    8700  0.081015579        0           -0 
-    8800  0.081229793        0           -0 
-    8900  0.081384877        0           -0 
-    9000  0.081573769        0           -0 
-    9100  0.081814627        0           -0 
-    9200  0.082011676        0           -0 
-    9300  0.082181241        0           -0 
-    9400  0.082372925        0           -0 
-    9500  0.082542522        0           -0 
-    9600  0.082807766        0           -0 
-    9700  0.083031437        0           -0 
-    9800  0.083245133        0           -0 
-    9900  0.083414894        0           -0 
-   10000   0.08360226        0           -0 
-Loop time of 0.0836205 on 1 procs for 10000 steps with 0 atoms
+Per MPI rank memory allocation (min/avg/max) = 0.5452 | 0.5452 | 0.5452 Mbytes
+Step CPU Atoms 
+       0            0        0 
+     100  0.035125718     1000 
+     200  0.060516624     1000 
+     300  0.082177677     1000 
+     400   0.11786093      999 
+     500   0.14071226      998 
+     600   0.16782129      998 
+     700    0.1931484      998 
+     800   0.21839432      998 
+     900   0.24528219      998 
+    1000   0.27261429      998 
+    1100   0.30207086      998 
+    1200    0.3278825      998 
+    1300   0.35699341      998 
+    1400   0.38271492      998 
+    1500   0.40945914      998 
+    1600   0.42989055      998 
+    1700   0.45507196      998 
+    1800   0.48546127      998 
+    1900   0.51838025      998 
+    2000   0.54479694      998 
+    2100    0.5720696      998 
+    2200   0.59716913      998 
+    2300   0.62224077      998 
+    2400   0.65635831      998 
+    2500   0.68900503      998 
+    2600   0.71975059      998 
+    2700   0.75128512      998 
+    2800   0.78191875      998 
+    2900   0.81672923      998 
+    3000   0.85071107      997 
+    3100    0.8748553      997 
+    3200   0.90715749      997 
+    3300   0.93595256      997 
+    3400   0.96668591      997 
+    3500   0.99734517      996 
+    3600    1.0238479      996 
+    3700    1.0534194      996 
+    3800    1.0848745      996 
+    3900    1.1212381      996 
+    4000    1.1641306      996 
+    4100    1.1989345      996 
+    4200    1.2322428      996 
+    4300    1.2687929      995 
+    4400    1.2970379      995 
+    4500    1.3294852      995 
+    4600    1.3645026      995 
+    4700    1.3894306      994 
+    4800     1.411446      994 
+    4900    1.4376859      994 
+    5000    1.4659666      994 
+    5100    1.4894161      994 
+    5200    1.5190414      994 
+    5300    1.5468455      994 
+    5400    1.5732201      994 
+    5500    1.5997212      994 
+    5600    1.6222606      993 
+    5700    1.6542273      993 
+    5800    1.6811462      993 
+    5900    1.7061468      993 
+    6000    1.7338531      993 
+    6100     1.764742      993 
+    6200    1.7903641      993 
+    6300    1.8207417      993 
+    6400    1.8469004      993 
+    6500    1.8764635      993 
+    6600    1.9090433      993 
+    6700    1.9372361      993 
+    6800    1.9654223      993 
+    6900    1.9920333      993 
+    7000    2.0151307      993 
+    7100    2.0508742      993 
+    7200    2.0822202      993 
+    7300    2.1087962      993 
+    7400    2.1404381      992 
+    7500    2.1637071      992 
+    7600    2.1878436      992 
+    7700    2.2199182      992 
+    7800    2.2538678      992 
+    7900    2.2856564      992 
+    8000    2.3153538      992 
+    8100    2.3483143      992 
+    8200    2.3759924      992 
+    8300    2.4104568      992 
+    8400     2.437852      991 
+    8500    2.4638903      991 
+    8600    2.4953647      991 
+    8700    2.5258805      991 
+    8800    2.5528457      991 
+    8900    2.5832429      991 
+    9000     2.619702      991 
+    9100    2.6488005      991 
+    9200    2.6821248      991 
+    9300    2.7123474      990 
+    9400    2.7425265      990 
+    9500    2.7707248      990 
+    9600    2.8028979      990 
+    9700    2.8357298      990 
+    9800    2.8646225      990 
+    9900     2.896884      989 
+   10000    2.9213484      989 
+Loop time of 2.92148 on 1 procs for 10000 steps with 989 atoms
 
-Performance: 103323.938 ns/day, 0.000 hours/ns, 119587.892 timesteps/s
-57.9% CPU use with 1 MPI tasks x 1 OpenMP threads
+97.5% CPU use with 1 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
-Pair    | 0.0022623  | 0.0022623  | 0.0022623  |   0.0 |  2.71
-Neigh   | 0.0041534  | 0.0041534  | 0.0041534  |   0.0 |  4.97
-Comm    | 0.019174   | 0.019174   | 0.019174   |   0.0 | 22.93
-Output  | 0.0251     | 0.0251     | 0.0251     |   0.0 | 30.02
-Modify  | 0.027745   | 0.027745   | 0.027745   |   0.0 | 33.18
-Other   |            | 0.005186   |            |       |  6.20
+Pair    | 0.30263    | 0.30263    | 0.30263    |   0.0 | 10.36
+Neigh   | 0.47145    | 0.47145    | 0.47145    |   0.0 | 16.14
+Comm    | 0.015068   | 0.015068   | 0.015068   |   0.0 |  0.52
+Output  | 0.6027     | 0.6027     | 0.6027     |   0.0 | 20.63
+Modify  | 1.3515     | 1.3515     | 1.3515     |   0.0 | 46.26
+Other   |            | 0.1782     |            |       |  6.10
 
-Nlocal:    0 ave 0 max 0 min
+Nlocal:    989 ave 989 max 989 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
 Nghost:    0 ave 0 max 0 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
-Neighs:    0 ave 0 max 0 min
+Neighs:    2022 ave 2022 max 2022 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
 
-Total # of neighbors = 0
-Neighbor list builds = 2
-Dangerous builds = 1
+Total # of neighbors = 2022
+Ave neighs/atom = 2.04449
+Neighbor list builds = 603
+Dangerous builds = 0
 
 print "All done"
 All done
-Total wall time: 0:00:00
+Total wall time: 0:00:02
