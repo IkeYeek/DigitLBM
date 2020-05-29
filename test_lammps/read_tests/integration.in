@@ -1,0 +1,52 @@
+
+variable name string dump_integration
+
+# initialisation ---------------------------------------------------
+
+dimension 3
+boundary p p p
+units si
+atom_style sphere
+
+# univers ---------------------------------------------------
+
+region		    mainbox block -7e-3 7e-3 -2e-5 2e-5 -2e-4 2e-4 units box
+#create_box	    1 mainbox
+
+read_data output.data 
+
+
+fix		walls all wall/gran/region hooke/history &
+		4000.0 NULL 100.0 NULL 0.5 1 region mainbox
+
+fix 1 all nve/sphere
+fix 2 all gravity 1.0 vector 0 0 -1
+
+# atoms ---------------------------------------------------
+
+comm_modify vel yes
+
+neighbor 0.0000001 bin
+#neigh_modify	delay 0 every 1 check yes
+neigh_modify delay 0 every 1 check yes page 500000 one 50000
+
+#pair_style	hybrid gran/hooke 4000.0 NULL 100.0 NULL 0.5 1
+#pair_coeff	* * gran/hooke
+pair_style gran/hooke 200000.0 70000.0 50.0 30.0 0.5 0
+pair_coeff	* * 
+
+# run ---------------------------------------------------
+
+timestep 0.001
+
+thermo_style    custom step cpu atoms 
+thermo_modify   lost ignore
+thermo 100
+
+#dump     1 all custom 50 ${name}.dump id type mass diameter element xs ys zs 
+dump 1 all image 50 ${name}-*.jpg type diameter zoom 1 axes yes 1 1 &
+    box yes 2 view 90 90 adiam 3e-4
+
+run     1000
+
+print "All done"
