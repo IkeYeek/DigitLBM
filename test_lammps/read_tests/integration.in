@@ -6,7 +6,7 @@ variable name string dump_integration
 
 units       si
 dimension   3
-boundary    p   p   f
+boundary    f	f   f
 atom_style  sphere
 
 # -------------------- UNIVERS ------------------------------------

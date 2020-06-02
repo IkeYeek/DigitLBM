@@ -8,7 +8,7 @@ dest = open(title,"w")
 
 nbAtoms = source.readline().rstrip('\n\r')
 
-nbRepY = 3
+nbRepY = 33
 
 nbAtoms = str((int(nbAtoms)*nbRepY))
 
