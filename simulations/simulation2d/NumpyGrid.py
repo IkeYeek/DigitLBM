@@ -1,8 +1,7 @@
 #!/usr/bin/python3.8
 import collections
 from random import randint
-from threading import Thread
-
+import numpy as np
 from simulations.logger import Logger
 from simulations.simulation2d.Particle import Particle
 
@@ -19,12 +18,9 @@ class Grid(object):
         :param size: la taille du grid (x pour x*x)
         """
         self.logger = Logger().getInstance()
-        self.grid = {}
+        self.grid = np.empty(size ** 2, dtype=Particle)
         self.size = size
         self.logger.info("Initialisation du nid de poussière")
-        for y in range(self.size):
-            for x in range(self.size):
-                self.grid[y, x] = None
         self.logger.info("Nid de poussière terminé")
 
     def show_grid(self) -> None:
@@ -34,14 +30,15 @@ class Grid(object):
         :return:
         """
         last_i = -1
-        for i, j in self.grid:
-            if i != last_i:
-                last_i = i
-                print()
-            if self.grid[i, j] is None:
-                print(" x ", end='')
-            else:
-                print(" %s " % self.grid[i, j], end='')
+        for i in range(self.size):
+            for j in range(self.size):
+                if i != last_i:
+                    last_i = i
+                    print()
+                if self.grid[i * self.size + j] is None:
+                    print(" x ", end='')
+                else:
+                    print(" %s " % self.grid[i * self.size + j], end='')
 
     def can_fit(self, particle: Particle) -> bool:
         """
@@ -54,7 +51,7 @@ class Grid(object):
             for j in range(particle.size):
                 if particle.i + particle.size > self.size or particle.j + particle.size > self.size:
                     fits = False
-                elif self.grid[particle.i + i, particle.j + j] is not None:
+                elif self.grid[(particle.i + i) * self.size + particle.j + j] is not None:
                     fits = False
             return fits
 
@@ -65,7 +62,7 @@ class Grid(object):
         """
         for i in range(particle.size):
             for j in range(particle.size):
-                self.grid[particle.i + i, particle.j + j] = particle
+                self.grid[(particle.i + i) * self.size + particle.j + j] = particle
 
     def populate(self, min_size=1, max_size=1) -> None:
         """
@@ -91,68 +88,12 @@ class Grid(object):
                     Particle.avoid()
         self.logger.info("Étalement du nid de poussière terminé")
 
-
-
     def particle_at(self, ij: tuple) -> Particle:
         """
         renvoie la particule aux coordonnées (i, j) si elle existe
         """
         if 0 <= ij[0] < self.size and 0 <= ij[1] < self.size:
-            return self.grid[ij]
+            return self.grid[int((ij[0] * self.size) + ij[1])]
         else:
             raise Exception('Coordonnée impossible (%d, %d)' % ij)
 
-
-""" peut servir
-class Grid:
-    def __init__(self, size: int):
-        self.grid = {}
-        self.default_grid = []
-        self.size = size
-        for i in range(size):
-            for j in range(size):
-                self.default_grid.append((i, j))
-
-    def populate(self, min_size=1, max_size=1) -> None:
-        while len(self.default_grid) > 0:
-            curr_point = self.default_grid[0]
-            size = randint(min_size, max_size)
-            curr_particle = Particle(size, curr_point[0], curr_point[1])
-            fitted = False
-            while not fitted:
-                if self.can_fit(curr_particle):
-                    self.fit(curr_particle)
-                    fitted = True
-                else:
-                    curr_particle.size -= 1
-        # self.grid = collections.OrderedDict(sorted(self.grid.items()))
-
-    def can_fit(self, particle: Particle) -> bool:
-        if particle.i + particle.size > self.size or particle.j + particle.size > self.size:
-            return False
-        else:
-            for i in range(particle.size):
-                for j in range(particle.size):
-                    if (particle.i + i, particle.j + j) not in self.default_grid:
-                        return False
-
-        return True
-
-    def fit(self, particle):
-        for i in range(particle.size):
-            for j in range(particle.size):
-                coords = particle.i + i, particle.j + j
-                self.default_grid.remove(coords)
-                self.grid[coords] = particle
-
-    def show_ascii_grid(self):
-        last_i = -1
-        for i, j in self.grid:
-            if i != last_i:
-                last_i = i
-                print()
-            if self.grid[i, j] is None:
-                print(" x ", end='')
-            else:
-                print(" %s " % self.grid[i, j], end='')
-"""

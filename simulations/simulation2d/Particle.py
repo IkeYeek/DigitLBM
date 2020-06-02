@@ -23,8 +23,8 @@ class Particle(object):
         self.j = j
         self.energy = 0
         Particle._ID += 1
-        if self.i % 100 == 0 and self.j == 1:
-            print("particle at %d:%d size: %d ref: %d" % (self.i, self.j, self.size, self.id))
+        if self.i % 100 == 0 and self.j < 1:
+            print("particle n°%d at %d;%d" % (self.id, self.i, self.j))
 
     def __str__(self) -> str:
         """

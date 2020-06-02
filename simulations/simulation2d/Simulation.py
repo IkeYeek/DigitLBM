@@ -1,7 +1,12 @@
 #!/usr/bin/python3.8
 import math
 
-from simulations.simulation2d.Grid import Grid
+import logging
+from rich.table import Table
+
+
+from simulations.logger import Logger
+from simulations.simulation2d.NumpyGrid import Grid
 
 
 class Simulation(object):
@@ -15,12 +20,13 @@ class Simulation(object):
         :param speed: la vitesse du laser dans la simulation
         :param spot_size: la taille du spot du laser
         """
+        self.logger = Logger().getInstance()
         self.schema = schema
         self.grid = grid
         self.power = power
         self.speed = speed
         self.step = 0
-        if spot_size&1 != 1:
+        if spot_size & 1 != 1:
             spot_size += 1
         self.spot_size = spot_size
 
@@ -28,6 +34,17 @@ class Simulation(object):
         """
         lance la simulation (peut prendre du temps)
         """
+        self.logger.info("Démarrage de la simulation")
+        table = Table(show_header=True, header_style="bold magenta")
+        table.add_column("Paramètre", style="dim", width=12)
+        table.add_column("Valeur")
+        params = self.get_params()
+        for p in params:
+            table.add_row(
+                p, str(params[p])
+            )
+
+        self.logger.log_table(table, "Paramètres de la simulation")
         schema = []
         schema.extend(self.schema)
         last_position = schema.pop(0)
@@ -35,7 +52,7 @@ class Simulation(object):
             next_position = schema.pop(0)
             self.go_through(last_position, next_position, len(schema) == 0)
             last_position = next_position
-        print("simulation done in %d steps" % (self.step, ))
+        self.logger.info("Fin de la simulation")
 
     def go_through(self, origin: tuple, destination: tuple, last=False) -> None:
         """
@@ -60,8 +77,6 @@ class Simulation(object):
         for n in range(self.spot_size):
             for k in range(self.spot_size):
                 self.step += 1
-                if self.step % 100000 == 0:
-                    print("step %d for %d;%d" % (self.step, i, j))
                 x = i + n - offset
                 y = j + k - offset
                 if ((x - i) ** 2) + ((y - j) ** 2) < (self.spot_size/2) ** 2:
@@ -95,6 +110,11 @@ class Simulation(object):
             points.append(destination)
         return points
 
+    def get_params(self, param=None):
+        if param is None:
+            return {'grid_size' : self.grid.size, 'step': self.step, 'spot_size': self.spot_size, 'speed': self.speed, 'power': self.power}
+        else:
+            return getattr(self, param, None)
 
 
 

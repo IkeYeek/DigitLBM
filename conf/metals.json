@@ -1,6 +1,10 @@
 {
- "Tungstene": {
-  "Absorbance": 0,
-  "Point de fusion": 0
+ "Alluminium": {
+  "Absorbance": 8,
+  "Point de fusion": 4
+ },
+ "Allu2": {
+  "Absorbance": 4,
+  "Point de fusion": 7
  }
 }
