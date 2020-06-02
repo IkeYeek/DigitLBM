@@ -39,28 +39,8 @@ thermo_style	custom step atoms temp c_1 c_2 press
 thermo_modify   lost ignore
 compute_modify  thermo_temp dynamic/dof yes
 
-dump		2 all image 100 image.*.jpg type type &
+dump		2 all image 100 image.*.jpg type radius &
 		zoom 1.4 adiam 1.0 box no 0.0 axes yes 0.9 0.03
 dump_modify	2 pad 5
 
 run	        5000
-
-region          container delete
-variable        theta equal (step-5000)*(4.0*PI/5000)
-region          container block -6 6 -6 6 -6 6 units box &
-                rotate v_theta 0 0 0 0 0 1
-run	        5000
-
-region          container delete
-region          container block -6 6 -6 6 -6 6 units box
-run             5000
-
-region          container delete
-variable        theta equal (step-15000)*(4.0*PI/5000)
-region          container block -6 6 -6 6 -6 6 units box &
-                rotate v_theta 0 0 0 1 1 1
-run	        5000
-
-region          container delete
-region          container block -6 6 -6 6 -6 6 units box
-run             5000

@@ -1,52 +1,60 @@
-
+clear
+# -------------------- VARIABLES DEFINITION -----------------------
 variable name string dump_integration
 
-# initialisation ---------------------------------------------------
+# -------------------- INITIALISATION -----------------------------
 
-dimension 3
-boundary p p p
-units si
-atom_style sphere
+units       si
+dimension   3
+boundary    p   p   f
+atom_style  sphere
 
-# univers ---------------------------------------------------
+# -------------------- UNIVERS ------------------------------------
+#region          univers block -0.01 0.02 -0.01 0.01 -0.01 0.0005 units box
+#create_box      1 univers
+region		    mainbox block 0 0.010026607 0 0.0099519084 0 0.00017071021 units box
+create_box	    1 mainbox
 
-region		    mainbox block -7e-3 7e-3 -2e-5 2e-5 -2e-4 2e-4 units box
-#create_box	    1 mainbox
-
-read_data output.data 
-
+read_data output.data add merge
 
 fix		walls all wall/gran/region hooke/history &
 		4000.0 NULL 100.0 NULL 0.5 1 region mainbox
 
-fix 1 all nve/sphere
-fix 2 all gravity 1.0 vector 0 0 -1
-
-# atoms ---------------------------------------------------
+#fix		walls all wall/gran/region granular region mainbox
 
 comm_modify vel yes
 
+fix 1 all nve/sphere
+fix 2 all gravity 1.0 vector 0 0 -1
+
+# -------------------- ATOMS ------------------------------------
+
 neighbor 0.0000001 bin
 #neigh_modify	delay 0 every 1 check yes
-neigh_modify delay 0 every 1 check yes page 500000 one 50000
+neigh_modify delay 0 every 1 check yes page 1000000 one 100000
 
-#pair_style	hybrid gran/hooke 4000.0 NULL 100.0 NULL 0.5 1
+
+pair_style	hybrid gran/hooke 4000.0 NULL 100.0 NULL 0.5 1
+pair_coeff	* * gran/hooke
+
+#pair_style granular
 #pair_coeff	* * gran/hooke
-pair_style gran/hooke 200000.0 70000.0 50.0 30.0 0.5 0
-pair_coeff	* * 
 
-# run ---------------------------------------------------
+#pair_style gran/hooke 200000.0 70000.0 50.0 30.0 0.5 0
+#pair_coeff	* * 
 
-timestep 0.001
+# -------------------- RUN --------------------------------------
+
+timestep 0.00001
 
 thermo_style    custom step cpu atoms 
 thermo_modify   lost ignore
-thermo 100
+thermo 500
 
-#dump     1 all custom 50 ${name}.dump id type mass diameter element xs ys zs 
-dump 1 all image 50 ${name}-*.jpg type diameter zoom 1 axes yes 1 1 &
-    box yes 2 view 90 90 adiam 3e-4
+dump   ovito all custom 500 ${name}.dump id type mass radius element xs ys zs 
+#dump    jpg all image 1000 ${name}-*.jpg type diameter zoom 1 axes yes 1 1 &
+#    box yes 1 view 90 90 adiam 3e-4
 
-run     1000
+run     10000
 
 print "All done"

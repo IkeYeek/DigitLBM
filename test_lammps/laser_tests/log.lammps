@@ -1,0 +1,170 @@
+LAMMPS (5 May 2020)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:94)
+  using 1 OpenMP thread(s) per MPI task
+clear
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:94)
+  using 1 OpenMP thread(s) per MPI task
+# ----------------------- VARIABLES DEFINITION -----------------------
+variable name string dump_laser_restart
+
+# ------------------------ INITIALIZATION ----------------------
+
+units 		si
+dimension	3
+boundary	f   f   f
+atom_style	sphere
+
+
+# ----------------------- SYSTEM DEFINITION -----------------------
+region		    mainbox block 0 1 0 1 0 1 units box
+create_box	    1 mainbox
+Created orthogonal box = (0 0 0) to (1 1 1)
+  1 by 1 by 1 MPI processor grid
+
+read_data laser.data add merge
+  orthogonal box = (0 0 0) to (1 1 1)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  1994 atoms
+  reading velocities ...
+  1994 velocities
+  read_data CPU = 0.0805595 secs
+
+fix		walls all wall/gran/region hooke/history 		4000.0 NULL 100.0 NULL 0.5 1 region mainbox
+#fix Zwall all wall/gran granular hertz/material 1e5 1e3 0.3 tangential mindlin NULL 1.0 0.5 zplane 0 NULL
+#fix Xwall all wall/gran granular hertz/material 1e5 1e3 0.3 tangential mindlin NULL 1.0 0.5 zplane 0 NULL
+#fix Ywall all wall/gran granular hertz/material 1e5 1e3 0.3 tangential mindlin NULL 1.0 0.5 zplane 0 NULL
+
+comm_modify vel yes
+
+#  ---------------------- ATOM DEFINITION -------------------------
+
+
+fix 1 all nve/sphere
+fix 2 all gravity 1.0 vector 0 0 -1
+
+fix 3 all freeze
+
+#fix insertion all pour 1000 1 12345 region mainbox diam range 0.01 0.05
+#fix insertion all pour 1000 1 12345 region mainbox diam range 0.00002 0.00005
+#FIX id groupID "ajout" nb type randSeed REGION regionID
+
+neighbor 		0.1 bin
+neigh_modify 	delay 0 every 1 check yes page 1000000 one 100000
+
+
+# ------------------------ FORCE FIELDS -----------------------
+
+#pair_style	granular
+###pair_coeff * * hooke 1000.0 50.0 tangential linear_history 500.0 1.0 0.4 damping mass_velocity
+#pair_coeff      1 * jkr 1000.0 50.0 0.3 10 tangential mindlin 800.0 1.0 0.5 rolling sds 500.0 200.0 0.5 twisting marshall
+
+
+pair_style	hybrid gran/hooke 4000.0 NULL 100.0 NULL 0.5 1
+pair_coeff	* * gran/hooke
+
+#--------------------------- OUTPUT SETTINGS ----------------------------
+#compute csym all centro/atom fcc
+#compute eng all pe/atom
+#compute eatoms all reduce sum c_eng
+#compute strs all stress/atom
+
+#----------------------Run Minimization-------------------------
+timestep 0.00001
+
+thermo_style    custom step cpu atoms
+thermo_modify   lost ignore
+thermo 1000
+#thermo_style custom step pe lx ly lz press pxx pyy pzz c_eatoms
+
+dump     1 all custom 1000 ${name}.dump id type mass radius element xs ys zs
+dump     1 all custom 1000 dump_laser_restart.dump id type mass radius element xs ys zs
+
+#min_style cg
+#minimize 1e-15 1e-15 5000 5000
+
+run     1000
+Neighbor list info ...
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 100000, page size: 1000000
+  master list distance cutoff = 0.124998
+  ghost atom cutoff = 0.124998
+  binsize = 0.0624992, bins = 17 17 17
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair gran/hooke, perpetual
+      attributes: half, newton on, size
+      pair build: half/size/bin/newton
+      stencil: half/bin/3d/newton
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 10.52 | 10.52 | 10.52 Mbytes
+Step CPU Atoms 
+       0            0     1994 
+    1000    1.2780955     1994 
+Loop time of 1.27813 on 1 procs for 1000 steps with 1994 atoms
+
+99.9% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.96868    | 0.96868    | 0.96868    |   0.0 | 75.79
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0.00048585 | 0.00048585 | 0.00048585 |   0.0 |  0.04
+Output  | 0.0081338  | 0.0081338  | 0.0081338  |   0.0 |  0.64
+Modify  | 0.28194    | 0.28194    | 0.28194    |   0.0 | 22.06
+Other   |            | 0.01888    |            |       |  1.48
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90956 ave 90956 max 90956 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90956
+Ave neighs/atom = 45.6148
+Neighbor list builds = 0
+Dangerous builds = 0
+
+# NOW IT S OK TO SIMULATE LASER
+
+
+region laser cylinder z 0.5 0.5 0.1 0 1
+#fix Atc all atc
+fix heat all heat 100000 1.0 region mainbox
+
+run  5000
+Per MPI rank memory allocation (min/avg/max) = 10.52 | 10.52 | 10.52 Mbytes
+Step CPU Atoms 
+    1000            0     1994 
+    2000    1.1863328     1994 
+    3000    2.3384768     1994 
+    4000    3.4671239     1994 
+    5000    4.5861716     1994 
+    6000    5.7223016     1994 
+Loop time of 5.72234 on 1 procs for 5000 steps with 1994 atoms
+
+100.0% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 4.2218     | 4.2218     | 4.2218     |   0.0 | 73.78
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0.0022409  | 0.0022409  | 0.0022409  |   0.0 |  0.04
+Output  | 0.039038   | 0.039038   | 0.039038   |   0.0 |  0.68
+Modify  | 1.3669     | 1.3669     | 1.3669     |   0.0 | 23.89
+Other   |            | 0.09227    |            |       |  1.61
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90954 ave 90954 max 90954 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90954
+Ave neighs/atom = 45.6138
+Neighbor list builds = 0
+Dangerous builds = 0
+Total wall time: 0:00:07
