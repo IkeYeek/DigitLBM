@@ -8,7 +8,7 @@ class StringDialogWrapper(simpledialog._QueryString):
     """
     def body(self, master: Tk) -> None:
         super().body(master)
-        self.iconphoto(True, PhotoImage(file=os.path.normpath(os.path.join('', 'conf', 'LBM_logo.png'))))
+        self.iconphoto(True, PhotoImage(file=os.path.normpath(os.path.join('', 'conf', 'LBM_logo.gif'))))
 
     @staticmethod
     def ask_string(title, prompt, **kargs):

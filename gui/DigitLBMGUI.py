@@ -218,7 +218,7 @@ class DigitLBMGUI(object):
             """
             try:
                 dialog = Toplevel(self.master)
-                dialog.iconphoto(True, PhotoImage(file=os.path.normpath(os.path.join('.', 'conf', 'LBM_logo.png'))))
+                dialog.iconphoto(True, PhotoImage(file=os.path.normpath(os.path.join('.', 'conf', 'LBM_logo.gif'))))
                 self.opened_gui[gui_class] = dialog
                 dialog.protocol("WM_DELETE_WINDOW", lambda arg=gui_class: self.close(arg))
                 gui_class(dialog, params)

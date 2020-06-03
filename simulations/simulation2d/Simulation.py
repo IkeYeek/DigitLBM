@@ -6,7 +6,7 @@ from rich.table import Table
 
 
 from simulations.logger import Logger
-from simulations.simulation2d.NumpyGrid import Grid
+from simulations.simulation2d.MultiprocessNumpyGrid import Grid
 
 
 class Simulation(object):

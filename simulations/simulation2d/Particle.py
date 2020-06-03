@@ -1,4 +1,7 @@
 #!/usr/bin/python3.8
+from simulations.logger import Logger
+
+
 class Particle(object):
     """
     Représente une particule
@@ -24,14 +27,14 @@ class Particle(object):
         self.energy = 0
         Particle._ID += 1
         if self.i % 100 == 0 and self.j < 1:
-            print("particle n°%d at %d;%d" % (self.id, self.i, self.j))
+            Logger().getInstance().debug("particle n°%d at %d;%d" % (self.id, self.i, self.j))
 
     def __str__(self) -> str:
         """
         méthode tostring, aucune autre réelle utilitée que le debug
         :return: peut varier, soit l'énergie, soit le numéro, ou autre selon les besoins
         """
-        return str(self.energy) if self.energy > 0 else "x"
+        return str(self.energy)
 
     def accept(self, power: int, speed: int) -> None:
         """

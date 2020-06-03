@@ -13,6 +13,7 @@ def check_metal_conf_exists() -> None:
             metal_file.write('{}')
 
 
+
 if __name__ == '__main__':
     # on s'assure que metals.json existe
     check_metal_conf_exists()
@@ -21,7 +22,7 @@ if __name__ == '__main__':
     # on passe la fenêtre principale
     gui = DigitLBMGUI(app)
     # on définit l'icon
-    app.iconphoto(True, PhotoImage(file=os.path.normpath(os.path.join('.', 'conf', 'LBM_logo.png'))))
+    app.iconphoto(True, PhotoImage(file=os.path.normpath(os.path.join('.', 'conf', 'LBM_logo.gif'))))
     # on lance l'app
     app.mainloop()
 

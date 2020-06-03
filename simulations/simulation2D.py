@@ -6,10 +6,9 @@ sur chaque micron, il y a une référence a une particule ou non
 une particule peut s'étendre sur +eurs microns
 """
 import time
-from rich.table import Table
 
 from simulations.logger import Logger
-from simulations.simulation2d.NumpyGrid import Grid
+from simulations.simulation2d.MultiprocessThreadedNumpyGrid import Grid
 from simulations.simulation2d.Simulation import Simulation
 
 
@@ -17,22 +16,21 @@ def benchmark(func, msg):
     t1 = time.time()
     func()
     t2 = time.time()
-    Logger.getInstance().info('Time in total : %f for %s' % (t2-t1, msg))
+    Logger.getInstance().info('%fs pour %s' % (t2-t1, msg))
 
 
 def main():
-    grid = Grid(5000)
-    benchmark(lambda: grid.populate(1, 10), "populating grid")
+    grid = Grid(10)
+    benchmark(lambda: grid.populate(1, 1), "générer le nid de poudre")
     mooves = [
-        (0, 0), (4999, 4999),
-        (4999, 0), (0, 4999)
+        (0, 0), (9, 9), (9, 0)
     ]
-
-    simulation = Simulation(mooves, grid, 1, 1, 30)
-    benchmark(lambda: simulation.simulate(), "simulating the laser")
-    # plat = grid.show_grid()
-    # Logger().getInstance().log_table(plat, 'Etat final du plateau :')
+    simulation = Simulation(mooves, grid, 1, 1, 1)
+    benchmark(lambda: simulation.simulate(), "simuler le laser")
+    # grid_representation = grid.show_grid()
+    # Logger().getInstance().debug('Etat final du plateau :')
+    # Logger().getInstance().debug(grid_representation)
 
 
 if __name__ == '__main__':
-    benchmark(main, "total execution")
+    benchmark(main, "l'exécution totale")

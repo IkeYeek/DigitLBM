@@ -1,9 +1,16 @@
 #!/usr/bin/python3.8
 import collections
+import ctypes
+import faulthandler
+import multiprocessing
+import sys
+from multiprocessing.connection import Connection
+from multiprocessing.queues import Queue
 from random import randint
 import numpy as np
 from simulations.logger import Logger
 from simulations.simulation2d.Particle import Particle
+from multiprocessing import Process, Pipe
 
 
 class Grid(object):
@@ -22,17 +29,19 @@ class Grid(object):
         self.size = size
         self.logger.info("Initialisation du nid de poussière")
         self.logger.info("Nid de poussière terminé")
+        self.processes = []
+        self.pipes = []
 
     def show_grid(self) -> str:
         """
         Utile uniquement pour debug des petits grid, sous peine de surement faire planter le PC étant donné la taile supposée de ce dernier
         Affich le grid dans la console
-        :return:
+        :return: the grid as a string
         """
         last_i = -1
         string = str()
         for i in range(self.size):
-            for j in range(0, self.size, 1):
+            for j in range(self.size):
                 if i != last_i:
                     last_i = i
                     string += '\n'
@@ -43,7 +52,8 @@ class Grid(object):
         string += "\n"
         return string
 
-    def can_fit(self, particle: Particle) -> bool:
+    @staticmethod
+    def can_fit(grid, size, particle: Particle) -> bool:
         """
         Vérifie qu'une particule de taille n aux coordonnées (i, j) peut rentrer
         :param particle: la particule a tester, déjà paramétrée
@@ -52,43 +62,73 @@ class Grid(object):
         fits = True
         for i in range(particle.size):
             for j in range(particle.size):
-                if particle.i + particle.size > self.size or particle.j + particle.size > self.size:
+                if particle.i + particle.size > size or particle.j + particle.size > size:
                     fits = False
-                elif self.grid[(particle.i + i) * self.size + particle.j + j] is not None:
+                elif grid[(particle.i + i) * size + particle.j + j] is not None:
                     fits = False
             return fits
 
-    def fit(self, particle: Particle) -> None:
+    @staticmethod
+    def fit(grid, size, particle: Particle) -> None:
         """
         Place une particule sur le grid
+        :param size:
+        :param grid:
         :param particle: la particule a placer
         """
         for i in range(particle.size):
             for j in range(particle.size):
-                self.grid[(particle.i + i) * self.size + particle.j + j] = particle
+                grid[(particle.i + i) * size + particle.j + j] = particle
 
-    def populate(self, min_size=1, max_size=1) -> None:
-        """
-        Cette méthode sert à remplir le grid, elle est amenée à évoluer vers une simulation + réaliste
-        Pour le moment, elle place des particules de taille min_size <= size <= max_size sans laisser de trous
-        une particule qui ne fit pas est réduite jusqu'à fit
-        :param min_size: la taille minimale des particules
-        :param max_size: la taille maximale des particules
-        """
-        self.logger.info("Démarrage de la simulation d'étalement")
-        for i in range(self.size):
-            for j in range(self.size):
-                size = randint(min_size, max_size)
-                curr_p = Particle(size, i, j)
+    @staticmethod
+    def populate_process(size_grid, min_size, max_size, start, stop, pipe: Connection):
+        grid_local = pipe.recv()
+        for y in range(start, stop, 1):
+            for x in range(size_grid):
+                size_particle = randint(min_size, max_size)
+                curr_p = Particle(size_particle, y, x)
                 fitted = False
                 while not fitted and curr_p.size >= 1:
-                    if self.can_fit(curr_p):
-                        self.fit(curr_p)
+                    if Grid.can_fit(grid_local, size_grid, curr_p):
+                        Grid.fit(grid_local, size_grid, curr_p)
                         fitted = True
                     else:
                         curr_p.size -= 1
                 if not fitted:
                     Particle.avoid()
+        grid_local = list(filter(lambda x: x is not None, grid_local))
+        # print(sys.getsizeof(grid_local))
+        pipe.send(grid_local)
+
+    def populate(self, min_size=1, max_size=1) -> None:
+        self.logger.info("Démarrage de la simuation d'étalement multiprocessus")
+
+        nb_core = 4
+        if nb_core > self.size:
+            nb_core = self.size
+        batch_size = np.math.ceil(self.size / nb_core)
+        for i in range(nb_core):
+            starting_line = i * batch_size
+            ending_line = i * batch_size + batch_size
+            if ending_line >= self.size:
+                ending_line = self.size
+            pipe_p, pipe_c = Pipe()
+            p = Process(target=Grid.populate_process, args=(self.size, min_size, max_size, starting_line, ending_line, pipe_c))
+            p.start()
+            pipe_p.send(self.grid)
+            self.processes.append(p)
+            self.pipes.append(pipe_p)
+
+        last_index = 0
+        for pipe in self.pipes:
+            curr = pipe.recv()
+            for val in curr:
+                if last_index < self.size ** 2:
+                    self.grid[last_index] = val
+                last_index += 1
+
+        for process in self.processes:
+            process.join()
         self.logger.info("Étalement du nid de poussière terminé")
 
     def particle_at(self, ij: tuple) -> Particle:

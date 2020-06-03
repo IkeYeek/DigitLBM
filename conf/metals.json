@@ -6,5 +6,9 @@
  "Allu2": {
   "Absorbance": 4,
   "Point de fusion": 7
+ },
+ "test": {
+  "Absorbance": 0,
+  "Point de fusion": 0
  }
 }
