@@ -4,15 +4,12 @@ import ctypes
 import faulthandler
 import multiprocessing
 import sys
-import threading
 from multiprocessing.connection import Connection
-from multiprocessing.queues import Queue
 from random import randint
 import numpy as np
 from simulations.logger import Logger
 from simulations.simulation2d.Particle import Particle
-from multiprocessing import Process, Pipe
-from threading import Thread
+from multiprocessing import Process, Queue
 
 
 class Grid(object):
@@ -32,7 +29,7 @@ class Grid(object):
         self.logger.info("Initialisation du nid de poussière")
         self.logger.info("Nid de poussière terminé")
         self.processes = []
-        self.pipes = []
+        self.queues = []
 
     def show_grid(self) -> str:
         """
@@ -64,7 +61,7 @@ class Grid(object):
         fits = True
         for i in range(particle.size):
             for j in range(particle.size):
-                if particle.i + particle.size > size or particle.j + particle.size > size :
+                if particle.i + particle.size > size or particle.j + particle.size > size:
                     fits = False
                 elif grid[(particle.i + i) * size + particle.j + j] is not None:
                     fits = False
@@ -83,11 +80,9 @@ class Grid(object):
                 grid[(particle.i + i) * size + particle.j + j] = particle
 
     @staticmethod
-    def populate_process(size_grid, min_size, max_size, start, stop, pipe: Connection):
-        grid_local = pipe.recv()
-        Logger.getInstance().force(size_grid)
-
-        for y in range(abs(start-stop)):
+    def populate_process(size_grid, min_size, max_size, start, stop, queue: Queue):
+        grid_local = queue.get()
+        for y in range(start, stop, 1):
             for x in range(size_grid):
                 size_particle = randint(min_size, max_size)
                 curr_p = Particle(size_particle, y, x)
@@ -100,7 +95,9 @@ class Grid(object):
                         curr_p.size -= 1
                 if not fitted:
                     Particle.avoid()
-        pipe.send(grid_local)
+        grid_local = list(filter(lambda x: x is not None, grid_local))
+        # print(sys.getsizeof(grid_local))
+        queue.put(grid_local)
 
     def populate(self, min_size=1, max_size=1) -> None:
         self.logger.info("Démarrage de la simuation d'étalement multiprocessus")
@@ -114,42 +111,26 @@ class Grid(object):
             ending_line = i * batch_size + batch_size
             if ending_line >= self.size:
                 ending_line = self.size
-            pipe_p, pipe_c = Pipe()
-            p = Process(target=Grid.populate_process, args=(self.size, min_size, max_size, starting_line, ending_line, pipe_c))
+            q = Queue()
+            p = Process(target=Grid.populate_process, args=(self.size, min_size, max_size, starting_line, ending_line, q))
             p.start()
-            grid_local = np.empty((ending_line - starting_line) * self.size, dtype=Particle)
-            pipe_p.send(grid_local)
+            q.put(self.grid)
             self.processes.append(p)
-            self.pipes.append(pipe_p)
+            self.queues.append(q)
 
         last_index = 0
-        threads = []
-        for i, pipe in enumerate(self.pipes):
-            t = Thread(target=self.pipe_receiver, args=(pipe, i, batch_size))
-            t.start()
-            threads.append(t)
-
-        for thread in threads:
-            thread.join()
+        for queue in self.queues:
+            while queue.empty():
+                pass
+            curr = queue.get_nowait()
+            for val in curr:
+                if last_index < self.size ** 2:
+                    self.grid[last_index] = val
+                last_index += 1
 
         for process in self.processes:
             process.join()
-        Logger().getInstance().force(len(self.grid))
-
         self.logger.info("Étalement du nid de poussière terminé")
-
-    def pipe_receiver(self, pipe, n, batch_size):
-        self.logger.force("receiving %d" % (n,))
-
-        curr = pipe.recv()
-        self.logger.force("received %d" % (n,))
-        pipe.close()
-        starting_line = n * batch_size
-        last_index = starting_line * self.size
-        for val in curr:
-            if last_index < self.size ** 2:
-                self.grid[last_index] = val
-            last_index += 1
 
     def particle_at(self, ij: tuple) -> Particle:
         """

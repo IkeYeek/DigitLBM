@@ -20,7 +20,7 @@ def benchmark(func, msg):
 
 
 def main():
-    grid = Grid(10)
+    grid = Grid(2000)
     benchmark(lambda: grid.populate(1, 1), "générer le nid de poudre")
     mooves = [
         (0, 0), (9, 9), (9, 0)
