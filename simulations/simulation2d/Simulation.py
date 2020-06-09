@@ -1,12 +1,10 @@
 #!/usr/bin/python3.8
-import math
 
-import logging
 from rich.table import Table
 
 
 from simulations.logger import Logger
-from simulations.simulation2d.MultiprocessNumpyGrid import Grid
+from simulations.simulation2d.NumpyGrid import Grid
 
 
 class Simulation(object):
@@ -21,7 +19,7 @@ class Simulation(object):
         :param spot_size: la taille du spot du laser
         """
         self.logger = Logger().getInstance()
-        self.schema = schema
+        self.schemas = schema
         self.grid = grid
         self.power = power
         self.speed = speed
@@ -45,13 +43,15 @@ class Simulation(object):
             )
 
         self.logger.log_table(table, "Paramètres de la simulation")
-        schema = []
-        schema.extend(self.schema)
-        last_position = schema.pop(0)
-        while len(schema) > 0:
-            next_position = schema.pop(0)
-            self.go_through(last_position, next_position, len(schema) == 0)
-            last_position = next_position
+        for i in range(len(self.schemas)):
+            Logger().getInstance().debug("%d / %d" % (i, len(self.schemas)))
+            schema = []
+            schema.extend(self.schemas[i])
+            last_position = schema.pop(0)
+            while len(schema) > 0:
+                next_position = schema.pop(0)
+                self.go_through(last_position, next_position, len(schema) == 0)
+                last_position = next_position
         self.logger.info("Fin de la simulation")
 
     def go_through(self, origin: tuple, destination: tuple, last=False) -> None:

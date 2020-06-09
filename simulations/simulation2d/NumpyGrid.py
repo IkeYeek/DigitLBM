@@ -32,7 +32,7 @@ class Grid(object):
         last_i = -1
         string = str()
         for i in range(self.size):
-            for j in range(0, self.size, 1):
+            for j in range(self.size):
                 if i != last_i:
                     last_i = i
                     string += '\n'
