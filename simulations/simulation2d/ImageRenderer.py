@@ -14,11 +14,11 @@ class ImageRenderer:
         mx = 0
         for i in range(self.grid.size):
             for j in range(self.grid.size):
-                if self.grid.particle_at((i, j)).energy > mx:
-                    mx = self.grid.particle_at((i, j)).energy
+                if self.grid.particle_at(i, j).energy > mx:
+                    mx = self.grid.particle_at(i, j).energy
         ######
         for i in range(self.grid.size):
             for j in range(self.grid.size):
-                if self.grid.particle_at((i, j)).energy > 0:
-                    pixels[j, i] = (255, 0, round((self.grid.particle_at((i, j)).energy * 255) / mx))
+                if self.grid.particle_at(i, j).energy > 0:
+                    pixels[j, i] = (255, 0, round((self.grid.particle_at(i, j).energy * 255) / mx))
         self.im.show()

@@ -1,7 +1,6 @@
 #!/usr/bin/python3.8
 import collections
 from random import randint
-import numpy as np
 from simulations.logger import Logger
 from simulations.simulation2d.Particle import Particle
 
@@ -18,7 +17,7 @@ class Grid(object):
         :param size: la taille du grid (x pour x*x)
         """
         self.logger = Logger().getInstance()
-        self.grid = np.empty(size ** 2, dtype=Particle)
+        self.grid = [None] * size ** 2
         self.size = size
 
     def show_grid(self) -> str:

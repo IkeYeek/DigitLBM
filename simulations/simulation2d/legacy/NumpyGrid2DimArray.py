@@ -18,7 +18,7 @@ class Grid(object):
         :param size: la taille du grid (x pour x*x)
         """
         self.logger = Logger().getInstance()
-        self.grid = np.empty(size ** 2, dtype=Particle)
+        self.grid = np.empty((size, size), dtype=Particle)
         self.size = size
 
     def show_grid(self) -> str:
@@ -34,10 +34,10 @@ class Grid(object):
                 if i != last_i:
                     last_i = i
                     string += '\n'
-                if self.grid[i * self.size + j] is None:
+                if self.grid[i, j] is None:
                     string += " x "
                 else:
-                    string += " %s " % self.grid[i * self.size + j]
+                    string += " %s " % self.grid[i, j]
         string += "\n"
         return string
 
@@ -52,7 +52,7 @@ class Grid(object):
             for j in range(particle.size):
                 if particle.i + particle.size > self.size or particle.j + particle.size > self.size:
                     fits = False
-                elif self.grid[(particle.i + i) * self.size + particle.j + j] is not None:
+                elif self.grid[(particle.i + i), particle.j + j] is not None:
                     fits = False
             return fits
 
@@ -63,7 +63,7 @@ class Grid(object):
         """
         for i in range(particle.size):
             for j in range(particle.size):
-                self.grid[(particle.i + i) * self.size + particle.j + j] = particle
+                self.grid[(particle.i + i), particle.j + j] = particle
 
     def populate(self, min_size=1, max_size=1) -> None:
         """
@@ -91,6 +91,6 @@ class Grid(object):
         """
         renvoie la particule aux coordonnées (i, j) si elle existe
         """
-        return self.grid[int((i * self.size) + j)]
+        return self.grid[int(i), int(j)]
 
 

@@ -4,18 +4,15 @@
 on fait un grid de nxn, représentant un espace de n microns par n microns
 sur chaque micron, il y a une référence a une particule ou non
 une particule peut s'étendre sur +eurs microns
+UPDATE: nxn microns devient vite ingérable, à voir trouver mieux
 """
-import os
 import time
 
 from simulations.logger import Logger
 from simulations.simulation2d.ImageRenderer import ImageRenderer
+from simulations.simulation2d.LaserMoovesBridge import LaserMoovesBridge
 from simulations.simulation2d.NumpyGrid import Grid
 from simulations.simulation2d.Simulation import Simulation
-from sklearn.preprocessing import MinMaxScaler
-
-
-import numpy as np
 
 
 def benchmark(func, msg):
@@ -26,40 +23,31 @@ def benchmark(func, msg):
 
 
 def main():
-    grid = Grid(5000)
-    benchmark(lambda: grid.populate(1, 10), "générer le nid de poudre")
+    # On instancie le grid avec sa taille
+    grid = Grid(2500)
+    # On génère le lit de poudre en précisant (pour cette implémentation) les tailles
+    benchmark(lambda: grid.populate(1, 5), "générer le nid de poudre")
 
-    ##########
-    f_path = os.path.normpath('./autre/cylindre.csv')
-    temp = []
-    with open(f_path) as carre:
-        for l in carre:
-            temp.append(l.replace('\n', '').replace('[', '').replace(']', '').replace(';', ',').split(','))
-    temp_np = np.asarray(temp)
-    mms = MinMaxScaler(feature_range=(0, grid.size - 1))
-    temp_np = mms.fit_transform(temp_np)
-    temp_np = temp_np.astype('int')
-    mooves = []
+    # On instancie le bridge qui permet de récupérer les fichiers .csv et de les convertir en mouvements
+    lmb = LaserMoovesBridge('./autre/diamant.csv', grid)
+    mooves = lmb.get_moves()
 
-    for t in temp_np:
-        mooves.append(
-            [
-                (round(t[0]), round(t[1])), (round(t[3]), round(t[4]))])
-    ##########
-    mooves = [
-        [(0, 0), (999, 999), (0, 999), (500, 500), (999, 999), (0, 500), (0, 0)]
-    ]
-    simulation = Simulation(mooves, grid, 1, 1, 30)
+    # On prépare et lance la simulation
+    simulation = Simulation(mooves, grid, 1, 1, 400)
     benchmark(lambda: simulation.simulate(), "simuler le laser")
-    img = ImageRenderer(grid);
-    img.POC()
 
+    # On rend l'image
+    img = ImageRenderer(grid)
+    benchmark(lambda: img.POC(), "rendre l'image finale")
+
+    ##########
     def show_grid():
         grid_representation = grid.show_grid()
         Logger().getInstance().debug('Etat final du plateau :')
         Logger().getInstance().debug(grid_representation)
 
     # show_grid()
+    ##########
 
 
 if __name__ == '__main__':

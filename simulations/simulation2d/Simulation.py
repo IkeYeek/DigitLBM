@@ -1,5 +1,5 @@
 #!/usr/bin/python3.8
-
+from rich.progress import Progress
 from rich.table import Table
 
 
@@ -23,7 +23,6 @@ class Simulation(object):
         self.grid = grid
         self.power = power
         self.speed = speed
-        self.step = 0
         if spot_size & 1 != 1:
             spot_size += 1
         self.spot_size = spot_size
@@ -43,15 +42,18 @@ class Simulation(object):
             )
 
         self.logger.log_table(table, "Paramètres de la simulation")
-        for i in range(len(self.schemas)):
-            Logger().getInstance().debug("%d / %d" % (i, len(self.schemas)))
-            schema = []
-            schema.extend(self.schemas[i])
-            last_position = schema.pop(0)
-            while len(schema) > 0:
-                next_position = schema.pop(0)
-                self.go_through(last_position, next_position, len(schema) == 0)
-                last_position = next_position
+        with Progress() as progress:
+            simulation_progress = progress.add_task("[blue]Simulation en cours  ...", total=len(self.schemas))
+            for i in range(len(self.schemas)):
+                # Logger().getInstance().debug("%d/%d" % (i, len(self.schemas)))
+                progress.update(simulation_progress, advance=1)
+                schema = []
+                schema.extend(self.schemas[i])
+                last_position = schema.pop(0)
+                while len(schema) > 0:
+                    next_position = schema.pop(0)
+                    self.go_through(last_position, next_position, len(schema) == 0)
+                    last_position = next_position
         self.logger.info("Fin de la simulation")
 
     def go_through(self, origin: tuple, destination: tuple, last=False) -> None:
@@ -64,27 +66,57 @@ class Simulation(object):
         """
         points = Simulation.get_traveled_points(origin, destination, last)
         for point in points:
-            self.spot(point)
+            self.spot(int(point[0]), int(point[1]))
 
-    def spot(self, point) -> None:
+    def spo_t(self, i, j) -> None:
         """
         implementation of the laser spot
-        :param point: the point
         """
-        i, j = point[0], point[1]
-        offset = (self.spot_size-1) / 2
+        spot_size = self.spot_size
+        offset = (spot_size - 1) / 2
 
-        for n in range(self.spot_size):
-            for k in range(self.spot_size):
-                self.step += 1
+        for n in range(spot_size):
+            for k in range(spot_size):
                 x = i + n - offset
                 y = j + k - offset
-                if ((x - i) ** 2) + ((y - j) ** 2) < (self.spot_size/2) ** 2:
+                if ((x - i) ** 2) + ((y - j) ** 2) < (spot_size / 2) ** 2:
                     self.apply(x, y)
 
+    def spot(self, x, y) -> None:
+        """
+        Amélioration du laser spot (gain de perf ultra impressionnant ->
+        l'autre implémentation est + lente et bug avec PyPy (je la soupçonne de bloquer la JIT)
+        Pour un spot_size de 65 et un grid de 1000 sur diamant :
+        autre implémentation avec CPyton (plus rapide que PyPy dans ce cas là) : 260 sec
+        cette implémentation + PyPy (plus rapide que CPython) : 36 sec
+
+        En gros on divise par 4 le travail (ce qui explique le gain de perf CPython) et un miracle se produit pour PyPy
+        :param x:
+        :param y:
+        :return:
+        """
+        spot_size = self.spot_size
+        offset = round((spot_size - 1) / 2)
+        for i in range(x - offset, x, 1):
+            for j in range(y - offset, y, 1):
+                if (i - x) ** 2 + (j - y) ** 2 < (spot_size / 2) ** 2:
+                    xSym = x - (i - x)
+                    ySim = y - (j - y)
+                    self.apply(i, j)
+                    self.apply(xSym, j)
+                    self.apply(i, ySim)
+                    self.apply(xSym, ySim)
+        for i in range(offset):
+            self.apply(x+i, y)
+            self.apply(x, y+i)
+            self.apply(x-i, y)
+            self.apply(x, y-i)
+        self.apply(x, y)
+
     def apply(self, i, j):
-        if 0 <= i < self.grid.size and 0 <= j < self.grid.size:
-            self.grid.particle_at((i, j)).accept(self.power, self.speed)
+        grid_size = self.grid.size
+        if 0 <= i < grid_size and 0 <= j < grid_size:
+            self.grid.particle_at(i, j).accept(self.power, self.speed)
 
     @staticmethod
     def get_traveled_points(origin: tuple, destination: tuple, last) -> list:
@@ -112,7 +144,7 @@ class Simulation(object):
 
     def get_params(self, param=None):
         if param is None:
-            return {'grid_size' : self.grid.size, 'step': self.step, 'spot_size': self.spot_size, 'speed': self.speed, 'power': self.power}
+            return {'grid_size': self.grid.size, 'spot_size': self.spot_size, 'speed': self.speed, 'power': self.power}
         else:
             return getattr(self, param, None)
 
