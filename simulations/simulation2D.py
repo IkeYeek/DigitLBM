@@ -11,7 +11,7 @@ import time
 from simulations.logger import Logger
 from simulations.simulation2d.ImageRenderer import ImageRenderer
 from simulations.simulation2d.LaserMoovesBridge import LaserMoovesBridge
-from simulations.simulation2d.NumpyGrid import Grid
+from simulations.simulation2d.NoNumpyTest import Grid
 from simulations.simulation2d.Simulation import Simulation
 
 
@@ -24,7 +24,7 @@ def benchmark(func, msg):
 
 def main():
     # On instancie le grid avec sa taille
-    grid = Grid(2500)
+    grid = Grid(2000)
     # On génère le lit de poudre en précisant (pour cette implémentation) les tailles
     benchmark(lambda: grid.populate(1, 5), "générer le nid de poudre")
 
@@ -33,13 +33,14 @@ def main():
     mooves = lmb.get_moves()
 
     # On prépare et lance la simulation
-    simulation = Simulation(mooves, grid, 1, 1, 400)
+    simulation = Simulation(mooves, grid, 1, 1, 64)
     benchmark(lambda: simulation.simulate(), "simuler le laser")
 
     # On rend l'image
-    img = ImageRenderer(grid)
+    img = ImageRenderer(grid, simulation.get_params())
     benchmark(lambda: img.POC(), "rendre l'image finale")
-
+    # img.save()
+    img.show()
     ##########
     def show_grid():
         grid_representation = grid.show_grid()

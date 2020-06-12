@@ -14,7 +14,7 @@ class LaserMoovesBridge:
             for l in carre:
                 lines.append(l.replace('\n', '').replace('[', '').replace(']', '').replace(';', ',').split(','))
         temp_np = np.asarray(lines)
-        mms = MinMaxScaler(feature_range=(0 + 200, self.grid.size - 1 - 200))
+        mms = MinMaxScaler(feature_range=(0 + 50, self.grid.size - 1 - 50))
         temp_np = mms.fit_transform(temp_np)
         temp_np = temp_np.astype('int')
         mooves = []

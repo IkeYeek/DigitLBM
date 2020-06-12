@@ -68,9 +68,9 @@ class Simulation(object):
         for point in points:
             self.spot(int(point[0]), int(point[1]))
 
-    def spot_legacy(self, i, j) -> None:
+    def spo_t(self, i, j) -> None:
         """
-        implementation of the laser spot (deprecated)
+        implementation of the laser spot
         """
         spot_size = self.spot_size
         offset = (spot_size - 1) / 2
@@ -97,26 +97,24 @@ class Simulation(object):
         """
         spot_size = self.spot_size
         offset = round((spot_size - 1) / 2)
+        pts = []
         for i in range(x - offset, x, 1):
             for j in range(y - offset, y, 1):
                 if (i - x) ** 2 + (j - y) ** 2 < (spot_size / 2) ** 2:
-                    x_symetrique = x - (i - x)
-                    y_symetrique = y - (j - y)
-                    self.apply(i, j)
-                    self.apply(x_symetrique, j)
-                    self.apply(i, y_symetrique)
-                    self.apply(x_symetrique, y_symetrique)
+                    xSym = x - (i - x)
+                    ySim = y - (j - y)
+                    pts.extend([(i, j), (xSym, j), (i, ySim), (xSym, ySim)])
         for i in range(offset):
-            self.apply(x+i, y)
-            self.apply(x, y+i)
-            self.apply(x-i, y)
-            self.apply(x, y-i)
-        self.apply(x, y)
+            pts.extend([(x+i, y), (x, y+i), (x-i, y), (x, y-i)])
+        pts.append((x, y))
+        self.apply(pts)
 
-    def apply(self, i, j):
-        grid_size = self.grid.size
-        if 0 <= i < grid_size and 0 <= j < grid_size:
-            self.grid.particle_at(i, j).accept(self.power, self.speed)
+    def apply(self, pts):
+        for pt in pts:
+            i, j = pt
+            grid_size = self.grid.size
+            if 0 <= i < grid_size and 0 <= j < grid_size:
+                self.grid.particle_at(i, j).accept(self.power, self.speed)
 
     @staticmethod
     def get_traveled_points(origin: tuple, destination: tuple, last) -> list:
