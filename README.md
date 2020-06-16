@@ -19,36 +19,36 @@ https://www.cfdem.com/media/DEM/docu/Manual.html
 
 Premiere etape :
 -
-  git clone https://github.com/CFDEMproject/LIGGGHTS-PUBLIC.git
+  <code> git clone https://github.com/CFDEMproject/LIGGGHTS-PUBLIC.git </code>
 
 Deuxieme etape selon votre version de ubuntu :
 Ubuntu 16.04LTS:
-  sudo apt-get install openmpi-bin libopenmpi-dev libvtk6.2 libvtk6-dev
+  <code> sudo apt-get install openmpi-bin libopenmpi-dev libvtk6.2 libvtk6-dev </code>
 Ubuntu 17.10:
-  sudo apt-get install openmpi-bin libopenmpi-dev libvtk6.3 libvtk6-dev
+  <code> sudo apt-get install openmpi-bin libopenmpi-dev libvtk6.3 libvtk6-dev </code>
   
 Troisieme etape : 
 -
-  cd /LIGGGHTS-PUBLIC/src/
+  <code> cd /LIGGGHTS-PUBLIC/src/ </code>
   
 Quatrieme etape : 
 -
-  make auto
+  <code> make auto </code>
   (d'autres options sont possibles telles que "make serial" ou "make mpi" , examinez la doc 
   pour comprendre leur usage)
   
 Etape optionnelle : 
 -
-Vous pouvez faire "make yes-all" pour intégrer les differents packages ou
+Vous pouvez faire <code>make yes-all </code> pour intégrer les differents packages ou
 modifier le fichier /LIGGGHTS-PUBLIC/src/MAKE/MAkefile.user pour integrer d'autes packages
-Puis refaites "make auto" pour update le programme
+Puis refaites <code> make auto </code> pour update le programme
 
 PS : vous pouvez creer vos propres fichiers .cpp et .h pour les integrer a LIGGGHTS si l'envie 
 vous prends mais pensez à faire make auto.
 
 Cinquieme etape :(testée sur Debian 10)
 -
-  sudo ln -s ~/LIGGGHTS-PUBLIC/src/lmp_auto /usr/local/bin/
+  <code> sudo ln -s ~/LIGGGHTS-PUBLIC/src/lmp_auto /usr/local/bin/ </code>
 l'executable etant dans /LIGGGHTS-PUBLIC/src/
 faites en un executable (lmp_auto peut etre lmp_mpi oou lmp_serial selon votre commande make precedente)
 
@@ -57,10 +57,10 @@ faites en un executable (lmp_auto peut etre lmp_mpi oou lmp_serial selon votre c
 ----------------------------------------------------------------------------------------------------
 UTILISATION DE LIGGGHTS
 -
-Forme recommandé (selon votre lmp_*)
-lmp_auto -in fichier_LIGGGHTS
+Forme recommandé (selon lmp_serial ou lmp_mpi ou lmp_auto)
+<code> lmp_auto -in fichier_LIGGGHTS </code>
 vous pouvez aussi faire 
-lmp_auto < fichier_LIGGGHTS
+<code> lmp_auto < fichier_LIGGGHTS </code>
 mais quelques erreurs donc a éviter
 
 les fichiers LIGGGHTS peuvent etre sous n'importe quelle forme. CFDEM recommmande la forme suivante
