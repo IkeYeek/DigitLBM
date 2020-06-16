@@ -87,5 +87,10 @@ Exemple : in.laser_beam
 
 La forme d'ecriture n'a aucune incidence mais c'est preferable car on pourra avoir differents types de fichiers comme les data, restart, log ou script...
 
+----------------------------------------------------------------------------------------------------
+VISUALISATION DES RESULTATS
+-
+Je recommande ovito pour visualiser les resultats, Paraview etant moins complet selon moins pour afficher les resultats (libre à vous de changer les modes de rendus (jpg,mp4,vtk,dump ...)).
 
-CAILLARD Emilien
+
+Texte et tutoriel écrit par CAILLARD Emilien
