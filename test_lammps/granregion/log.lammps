@@ -43,7 +43,7 @@ thermo_style	custom step atoms temp c_1 c_2 press
 thermo_modify   lost ignore
 compute_modify  thermo_temp dynamic/dof yes
 
-dump		2 all image 100 image.*.jpg type type 		zoom 1.4 adiam 1.0 box no 0.0 axes yes 0.9 0.03
+dump		2 all image 100 image.*.jpg type radius 		zoom 1.4 adiam 1.0 box no 0.0 axes yes 0.9 0.03
 dump_modify	2 pad 5
 
 run	        5000
@@ -112,20 +112,20 @@ Step Atoms Temp c_1 c_2 Press
     4800      100 0.00035184939 0.00035184939 0.00032509451 4.7274174e-05 
     4900      100 0.00090220018 0.00090220018 0.0005971363 1.1189404e-05 
     5000      100 0.00022799581 0.00022799581 0.00024733949 3.6664302e-06 
-Loop time of 1.21176 on 1 procs for 5000 steps with 100 atoms
+Loop time of 1.16616 on 1 procs for 5000 steps with 100 atoms
 
-Performance: 1782530.512 tau/day, 4126.228 timesteps/s
-88.3% CPU use with 1 MPI tasks x 1 OpenMP threads
+Performance: 1852236.642 tau/day, 4287.585 timesteps/s
+95.5% CPU use with 1 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
-Pair    | 0.028507   | 0.028507   | 0.028507   |   0.0 |  2.35
-Neigh   | 0.041778   | 0.041778   | 0.041778   |   0.0 |  3.45
-Comm    | 0.0027992  | 0.0027992  | 0.0027992  |   0.0 |  0.23
-Output  | 1.0178     | 1.0178     | 1.0178     |   0.0 | 83.99
-Modify  | 0.10887    | 0.10887    | 0.10887    |   0.0 |  8.98
-Other   |            | 0.01202    |            |       |  0.99
+Pair    | 0.034948   | 0.034948   | 0.034948   |   0.0 |  3.00
+Neigh   | 0.03449    | 0.03449    | 0.03449    |   0.0 |  2.96
+Comm    | 0.0027758  | 0.0027758  | 0.0027758  |   0.0 |  0.24
+Output  | 0.97723    | 0.97723    | 0.97723    |   0.0 | 83.80
+Modify  | 0.10328    | 0.10328    | 0.10328    |   0.0 |  8.86
+Other   |            | 0.01344    |            |       |  1.15
 
 Nlocal:    100 ave 100 max 100 min
 Histogram: 1 0 0 0 0 0 0 0 0 0

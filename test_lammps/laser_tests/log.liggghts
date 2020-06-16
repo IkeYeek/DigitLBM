@@ -1,0 +1,3884 @@
+LIGGGHTS (Version LIGGGHTS-PUBLIC 3.8.0, compiled 2020-06-03-11:30:40 by emilien, git commit 6e87343906b56807d7e6e102f94210a8f69e2fe8)
+clear
+# ----------------------- VARIABLES DEFINITION -----------------------
+variable name string dump_laser_restart
+
+variable y equal 0.1
+#variable y loop 0 1 pad
+#variable y equal ramp(0,1)
+#variable y equal index(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9)
+variable tab index 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9
+
+# ------------------------ INITIALIZATION ----------------------
+
+units 		si
+dimension	3
+boundary	m	m	m
+#boundary	f	f	f
+atom_style granular
+#atom_style	sphere
+newton off
+
+
+# ----------------------- SYSTEM DEFINITION -----------------------
+#region		    mainbox block 0 1 0 1 0 1 units box
+#create_box	    1 mainbox
+
+#region laser cylinder z 0.5 0.5 0.03 0 1 move NULL v_y NULL
+
+
+read_data laser.data
+  orthogonal box = (0 0 0) to (1 1 1)
+  1 by 1 by 1 MPI processor grid
+  1994 atoms
+  1994 velocities
+
+
+#fix walls all wall/gran surface sphere primitive zplane 0
+fix zwalls all wall/gran model hertz tangential history primitive type 1 zplane 0.0
+
+
+
+fix 1 all nve/sphere
+fix 2 all gravity 9.81 vector 0 0 -1
+
+communicate single vel yes
+
+
+# ----------------------- ATOM DEFINITION -----------------------
+fix 		m1 all property/global youngsModulus peratomtype 5.e6
+fix 		m2 all property/global poissonsRatio peratomtype 0.45
+fix 		m3 all property/global coefficientRestitution peratomtypepair 1 0.7
+fix 		m4 all property/global coefficientFriction peratomtypepair 1 0.05
+#fix 		m5 all property/global characteristicVelocity scalar 2.
+#fix m6 all property/global cohesionEnergyDensity peratomtypepair 1 1200000
+#fix m7 all property/global coefficientRollingFriction peratomtypepair 1 0.1
+
+neighbor 		0.1 bin
+neigh_modify 	delay 0 every 1 check yes page 1000000 one 100000
+
+fix 		ftco all property/global thermalConductivity peratomtype 100.
+fix 		ftca all property/global thermalCapacity peratomtype 10.
+fix             heattransfer all heat/gran initial_temperature 300.
+
+pair_style gran model hertz tangential history
+pair_coeff	* *
+
+# ----------------------- OUTPUT SETTINGS -----------------------
+#compute csym all centro/atom fcc
+#compute eng all pe/atom
+#compute eatoms all reduce sum c_eng
+#compute strs all stress/atom
+
+# ----------------------- RUN -----------------------
+
+timestep 0.00001
+
+thermo_style    custom step cpu atoms
+thermo_modify   lost ignore
+thermo  100
+#thermo_style custom step pe lx ly lz press pxx pyy pzz c_eatoms
+
+dump     1 all custom 100 ${name}.dump id type mass radius element xs ys zs x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius f_Temp[0] f_heatFlux[0]
+dump     1 all custom 100 dump_laser_restart.dump id type mass radius element xs ys zs x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius f_Temp[0] f_heatFlux[0]
+
+#min_style cg
+#minimize 1e-15 1e-15 5000 5000
+
+run     500
+Setting up run at Tue Jun 16 14:49:22 2020
+
+Memory usage per processor = 47.1543 Mbytes
+    Step            CPU    Atoms 
+       0              0     1994 
+     100      0.4544542     1994 
+     200     0.89344076     1994 
+     300      1.3589207     1994 
+     400      1.8079768     1994 
+     500      2.2421136     1994 
+Loop time of 2.24214 on 1 procs for 500 steps with 1994 atoms, finish time Tue Jun 16 14:49:24 2020
+
+
+Pair  time (%) = 1.68546 (75.1719)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000392622 (0.0175111)
+Outpt time (%) = 0.104666 (4.66813)
+Other time (%) = 0.45162 (20.1424)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91204 ave 91204 max 91204 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91204
+Ave neighs/atom = 45.7392
+Neighbor list builds = 0
+Dangerous builds = 0
+
+# NOW IT S OK TO SIMULATE LASER
+
+#set region laser property/atom Temp 800.
+
+label loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 10/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.1 0.05 0 1
+
+    set region laser property/atom Temp 900
+  18 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:24 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+     500              0     1994 
+     600     0.44657518     1994 
+Loop time of 0.446598 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:24 2020
+
+
+Pair  time (%) = 0.338524 (75.8008)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.45391e-05 (0.0144513)
+Outpt time (%) = 0.0211736 (4.74108)
+Other time (%) = 0.0868352 (19.4437)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91195 ave 91195 max 91195 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91195
+Ave neighs/atom = 45.7347
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 11/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.11 0.05 0 1
+
+    set region laser property/atom Temp 900
+  19 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:24 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+     600              0     1994 
+     700     0.45606609     1994 
+Loop time of 0.456087 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:25 2020
+
+
+Pair  time (%) = 0.34344 (75.3014)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.41433e-05 (0.0162564)
+Outpt time (%) = 0.0210506 (4.61548)
+Other time (%) = 0.0915225 (20.0669)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91194 ave 91194 max 91194 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91194
+Ave neighs/atom = 45.7342
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 12/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.12 0.05 0 1
+
+    set region laser property/atom Temp 900
+  17 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:25 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+     700              0     1994 
+     800     0.45950386     1994 
+Loop time of 0.459523 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:25 2020
+
+
+Pair  time (%) = 0.34653 (75.4107)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.95074e-05 (0.0173021)
+Outpt time (%) = 0.0210531 (4.5815)
+Other time (%) = 0.091861 (19.9905)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91194 ave 91194 max 91194 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91194
+Ave neighs/atom = 45.7342
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 13/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.13 0.05 0 1
+
+    set region laser property/atom Temp 900
+  17 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:25 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+     800              0     1994 
+     900     0.45708845     1994 
+Loop time of 0.457109 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:26 2020
+
+
+Pair  time (%) = 0.346885 (75.8867)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.32849e-05 (0.0138446)
+Outpt time (%) = 0.0212526 (4.64935)
+Other time (%) = 0.0889082 (19.4501)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91191 ave 91191 max 91191 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91191
+Ave neighs/atom = 45.7327
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 14/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.14 0.05 0 1
+
+    set region laser property/atom Temp 900
+  16 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:26 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+     900              0     1994 
+    1000     0.45074572     1994 
+Loop time of 0.450767 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:26 2020
+
+
+Pair  time (%) = 0.341413 (75.7405)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.23852e-05 (0.0160582)
+Outpt time (%) = 0.021051 (4.67004)
+Other time (%) = 0.0882306 (19.5734)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91189 ave 91189 max 91189 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91189
+Ave neighs/atom = 45.7317
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 15/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.15 0.05 0 1
+
+    set region laser property/atom Temp 900
+  13 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:26 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    1000              0     1994 
+    1100     0.45173398     1994 
+Loop time of 0.451752 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:27 2020
+
+
+Pair  time (%) = 0.341676 (75.6335)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.94861e-05 (0.0175951)
+Outpt time (%) = 0.0212793 (4.71039)
+Other time (%) = 0.0887175 (19.6385)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91184 ave 91184 max 91184 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91184
+Ave neighs/atom = 45.7292
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 16/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.16 0.05 0 1
+
+    set region laser property/atom Temp 900
+  15 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:27 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    1100              0     1994 
+    1200     0.45291827     1994 
+Loop time of 0.452936 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:27 2020
+
+
+Pair  time (%) = 0.340638 (75.2068)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.37181e-05 (0.0162756)
+Outpt time (%) = 0.021659 (4.78192)
+Other time (%) = 0.0905645 (19.995)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91179 ave 91179 max 91179 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91179
+Ave neighs/atom = 45.7267
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 17/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.17 0.05 0 1
+
+    set region laser property/atom Temp 900
+  13 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:27 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    1200              0     1994 
+    1300     0.46450095     1994 
+Loop time of 0.464521 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:28 2020
+
+
+Pair  time (%) = 0.351401 (75.6479)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.85757e-05 (0.0147627)
+Outpt time (%) = 0.0213838 (4.6034)
+Other time (%) = 0.0916685 (19.734)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91171 ave 91171 max 91171 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91171
+Ave neighs/atom = 45.7227
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 18/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.18 0.05 0 1
+
+    set region laser property/atom Temp 900
+  16 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:28 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    1300              0     1994 
+    1400     0.46072261     1994 
+Loop time of 0.460742 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:28 2020
+
+
+Pair  time (%) = 0.348496 (75.638)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.56965e-05 (0.0164292)
+Outpt time (%) = 0.0212701 (4.61649)
+Other time (%) = 0.0909003 (19.7291)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91168 ave 91168 max 91168 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91168
+Ave neighs/atom = 45.7212
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 19/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.19 0.05 0 1
+
+    set region laser property/atom Temp 900
+  15 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:28 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    1400              0     1994 
+    1500     0.45152161     1994 
+Loop time of 0.451543 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:29 2020
+
+
+Pair  time (%) = 0.340957 (75.5091)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.42039e-05 (0.0164334)
+Outpt time (%) = 0.0211619 (4.68658)
+Other time (%) = 0.0893507 (19.7878)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91162 ave 91162 max 91162 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91162
+Ave neighs/atom = 45.7182
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 20/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.2 0.05 0 1
+
+    set region laser property/atom Temp 900
+  14 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:29 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    1500              0     1994 
+    1600     0.44923884     1994 
+Loop time of 0.44926 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:29 2020
+
+
+Pair  time (%) = 0.340912 (75.883)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.07518e-05 (0.0157485)
+Outpt time (%) = 0.0212582 (4.73182)
+Other time (%) = 0.0870188 (19.3694)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91156 ave 91156 max 91156 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91156
+Ave neighs/atom = 45.7151
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 21/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.21 0.05 0 1
+
+    set region laser property/atom Temp 900
+  15 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:29 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    1600              0     1994 
+    1700     0.45286661     1994 
+Loop time of 0.452887 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:30 2020
+
+
+Pair  time (%) = 0.342299 (75.5815)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.35178e-05 (0.0162331)
+Outpt time (%) = 0.0212467 (4.69139)
+Other time (%) = 0.0892681 (19.7109)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91150 ave 91150 max 91150 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91150
+Ave neighs/atom = 45.7121
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 22/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.22 0.05 0 1
+
+    set region laser property/atom Temp 900
+  16 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:30 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    1700              0     1994 
+    1800     0.45653202     1994 
+Loop time of 0.456554 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:30 2020
+
+
+Pair  time (%) = 0.345682 (75.7154)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.8601e-05 (0.0150258)
+Outpt time (%) = 0.0213274 (4.67139)
+Other time (%) = 0.0894764 (19.5982)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91146 ave 91146 max 91146 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91146
+Ave neighs/atom = 45.7101
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 23/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.23 0.05 0 1
+
+    set region laser property/atom Temp 900
+  16 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:30 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    1800              0     1994 
+    1900      0.4464669     1994 
+Loop time of 0.446486 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:31 2020
+
+
+Pair  time (%) = 0.337886 (75.6767)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.61308e-05 (0.0148114)
+Outpt time (%) = 0.0213525 (4.78235)
+Other time (%) = 0.0871817 (19.5262)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91143 ave 91143 max 91143 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91143
+Ave neighs/atom = 45.7086
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 24/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.24 0.05 0 1
+
+    set region laser property/atom Temp 900
+  15 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:31 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    1900              0     1994 
+    2000     0.45697439     1994 
+Loop time of 0.457 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:31 2020
+
+
+Pair  time (%) = 0.343142 (75.0858)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 8.70618e-05 (0.0190507)
+Outpt time (%) = 0.0214084 (4.68456)
+Other time (%) = 0.0923627 (20.2106)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91140 ave 91140 max 91140 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91140
+Ave neighs/atom = 45.7071
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 25/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.25 0.05 0 1
+
+    set region laser property/atom Temp 900
+  14 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:31 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    2000              0     1994 
+    2100     0.45438496     1994 
+Loop time of 0.454409 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:31 2020
+
+
+Pair  time (%) = 0.344592 (75.833)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.64868e-05 (0.0146315)
+Outpt time (%) = 0.0226686 (4.98859)
+Other time (%) = 0.0870818 (19.1638)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91135 ave 91135 max 91135 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91135
+Ave neighs/atom = 45.7046
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 26/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.26 0.05 0 1
+
+    set region laser property/atom Temp 900
+  12 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:31 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    2100              0     1994 
+    2200     0.45337726     1994 
+Loop time of 0.453397 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:32 2020
+
+
+Pair  time (%) = 0.339852 (74.9569)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.39879e-05 (0.0163186)
+Outpt time (%) = 0.0213347 (4.70553)
+Other time (%) = 0.092136 (20.3213)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91128 ave 91128 max 91128 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91128
+Ave neighs/atom = 45.7011
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 27/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.27 0.05 0 1
+
+    set region laser property/atom Temp 900
+  13 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:32 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    2200              0     1994 
+    2300     0.45232127     1994 
+Loop time of 0.45234 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:32 2020
+
+
+Pair  time (%) = 0.34216 (75.6423)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.84589e-05 (0.0173451)
+Outpt time (%) = 0.0212705 (4.70233)
+Other time (%) = 0.0888306 (19.638)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91115 ave 91115 max 91115 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91115
+Ave neighs/atom = 45.6946
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 28/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.28 0.05 0 1
+
+    set region laser property/atom Temp 900
+  11 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:32 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    2300              0     1994 
+    2400     0.45231959     1994 
+Loop time of 0.452342 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:33 2020
+
+
+Pair  time (%) = 0.342253 (75.6625)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.96376e-05 (0.0176056)
+Outpt time (%) = 0.0217303 (4.80396)
+Other time (%) = 0.0882787 (19.5159)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91109 ave 91109 max 91109 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91109
+Ave neighs/atom = 45.6916
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 29/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.29 0.05 0 1
+
+    set region laser property/atom Temp 900
+  11 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:33 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    2400              0     1994 
+    2500     0.45431972     1994 
+Loop time of 0.454344 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:33 2020
+
+
+Pair  time (%) = 0.342936 (75.4794)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.05021e-05 (0.0155173)
+Outpt time (%) = 0.0213512 (4.69935)
+Other time (%) = 0.0899863 (19.8058)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91106 ave 91106 max 91106 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91106
+Ave neighs/atom = 45.6901
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 30/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.3 0.05 0 1
+
+    set region laser property/atom Temp 900
+  12 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:33 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    2500              0     1994 
+    2600     0.44816123     1994 
+Loop time of 0.448186 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:34 2020
+
+
+Pair  time (%) = 0.336831 (75.1543)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.76302e-05 (0.017321)
+Outpt time (%) = 0.0216509 (4.83078)
+Other time (%) = 0.0896264 (19.9976)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91094 ave 91094 max 91094 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91094
+Ave neighs/atom = 45.6841
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 31/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.31 0.05 0 1
+
+    set region laser property/atom Temp 900
+  13 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:34 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    2600              0     1994 
+    2700      0.4482422     1994 
+Loop time of 0.44826 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:34 2020
+
+
+Pair  time (%) = 0.339364 (75.7069)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.64169e-05 (0.0170475)
+Outpt time (%) = 0.0214079 (4.77578)
+Other time (%) = 0.087412 (19.5003)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91085 ave 91085 max 91085 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91085
+Ave neighs/atom = 45.6795
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 32/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.32 0.05 0 1
+
+    set region laser property/atom Temp 900
+  11 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:34 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    2700              0     1994 
+    2800     0.46600807     1994 
+Loop time of 0.466033 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:35 2020
+
+
+Pair  time (%) = 0.352988 (75.7431)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 9.972e-05 (0.0213976)
+Outpt time (%) = 0.0223233 (4.79006)
+Other time (%) = 0.0906223 (19.4455)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91077 ave 91077 max 91077 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91077
+Ave neighs/atom = 45.6755
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 33/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.33 0.05 0 1
+
+    set region laser property/atom Temp 900
+  11 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:35 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    2800              0     1994 
+    2900     0.49205111     1994 
+Loop time of 0.492072 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:35 2020
+
+
+Pair  time (%) = 0.369563 (75.1033)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000118731 (0.0241288)
+Outpt time (%) = 0.0236324 (4.80262)
+Other time (%) = 0.0987587 (20.07)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91067 ave 91067 max 91067 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91067
+Ave neighs/atom = 45.6705
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 34/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.34 0.05 0 1
+
+    set region laser property/atom Temp 900
+  12 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:35 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    2900              0     1994 
+    3000     0.67816811     1994 
+Loop time of 0.678192 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:36 2020
+
+
+Pair  time (%) = 0.487699 (71.9116)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.00029268 (0.0431559)
+Outpt time (%) = 0.0223342 (3.2932)
+Other time (%) = 0.167866 (24.752)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91056 ave 91056 max 91056 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91056
+Ave neighs/atom = 45.665
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 35/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.35 0.05 0 1
+
+    set region laser property/atom Temp 900
+  12 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:36 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    3000              0     1994 
+    3100     0.45677404     1994 
+Loop time of 0.456862 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:36 2020
+
+
+Pair  time (%) = 0.341839 (74.8231)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 8.32361e-05 (0.0182191)
+Outpt time (%) = 0.0228 (4.99057)
+Other time (%) = 0.0921403 (20.1681)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91045 ave 91045 max 91045 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91045
+Ave neighs/atom = 45.6595
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 36/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.36 0.05 0 1
+
+    set region laser property/atom Temp 900
+  12 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:36 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    3100              0     1994 
+    3200     0.55109591     1994 
+Loop time of 0.551193 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:37 2020
+
+
+Pair  time (%) = 0.408978 (74.1987)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000183032 (0.0332065)
+Outpt time (%) = 0.0259345 (4.70515)
+Other time (%) = 0.116098 (21.0629)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91032 ave 91032 max 91032 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91032
+Ave neighs/atom = 45.653
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 37/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.37 0.05 0 1
+
+    set region laser property/atom Temp 900
+  12 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:37 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    3200              0     1994 
+    3300      0.5828566     1994 
+Loop time of 0.582931 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:38 2020
+
+
+Pair  time (%) = 0.443603 (76.0986)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.00015855 (0.0271988)
+Outpt time (%) = 0.0235937 (4.04742)
+Other time (%) = 0.115576 (19.8267)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91025 ave 91025 max 91025 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91025
+Ave neighs/atom = 45.6494
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 38/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.38 0.05 0 1
+
+    set region laser property/atom Temp 900
+  12 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:38 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    3300              0     1994 
+    3400     0.72294471     1994 
+Loop time of 0.723062 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:38 2020
+
+
+Pair  time (%) = 0.530038 (73.3046)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000229154 (0.0316921)
+Outpt time (%) = 0.0317971 (4.39756)
+Other time (%) = 0.160998 (22.2661)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91015 ave 91015 max 91015 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91015
+Ave neighs/atom = 45.6444
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 39/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.39 0.05 0 1
+
+    set region laser property/atom Temp 900
+  11 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:38 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    3400              0     1994 
+    3500     0.52026883     1994 
+Loop time of 0.520288 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:39 2020
+
+
+Pair  time (%) = 0.394809 (75.8827)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000119744 (0.0230149)
+Outpt time (%) = 0.0215179 (4.13576)
+Other time (%) = 0.103842 (19.9585)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    91001 ave 91001 max 91001 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 91001
+Ave neighs/atom = 45.6374
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 40/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.4 0.05 0 1
+
+    set region laser property/atom Temp 900
+  10 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:39 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    3500              0     1994 
+    3600     0.46468562     1994 
+Loop time of 0.464712 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:39 2020
+
+
+Pair  time (%) = 0.349816 (75.2758)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 9.93843e-05 (0.0213862)
+Outpt time (%) = 0.0215826 (4.6443)
+Other time (%) = 0.0932142 (20.0585)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90988 ave 90988 max 90988 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90988
+Ave neighs/atom = 45.6309
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 41/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.41 0.05 0 1
+
+    set region laser property/atom Temp 900
+  10 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:39 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    3600              0     1994 
+    3700     0.44836957     1994 
+Loop time of 0.448399 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:40 2020
+
+
+Pair  time (%) = 0.338476 (75.4853)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.47977e-05 (0.016681)
+Outpt time (%) = 0.0217125 (4.84223)
+Other time (%) = 0.0881365 (19.6558)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90974 ave 90974 max 90974 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90974
+Ave neighs/atom = 45.6239
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 42/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.42 0.05 0 1
+
+    set region laser property/atom Temp 900
+  9 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:40 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    3700              0     1994 
+    3800     0.44530485     1994 
+Loop time of 0.445326 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:40 2020
+
+
+Pair  time (%) = 0.336989 (75.6723)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.7181e-05 (0.0150858)
+Outpt time (%) = 0.02135 (4.79424)
+Other time (%) = 0.0869205 (19.5184)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90966 ave 90966 max 90966 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90966
+Ave neighs/atom = 45.6199
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 43/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.43 0.05 0 1
+
+    set region laser property/atom Temp 900
+  10 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:40 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    3800              0     1994 
+    3900     0.45085003     1994 
+Loop time of 0.450873 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:41 2020
+
+
+Pair  time (%) = 0.340875 (75.6034)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 9.28817e-05 (0.0206004)
+Outpt time (%) = 0.0216715 (4.80657)
+Other time (%) = 0.0882333 (19.5694)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90954 ave 90954 max 90954 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90954
+Ave neighs/atom = 45.6138
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 44/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.44 0.05 0 1
+
+    set region laser property/atom Temp 900
+  9 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:41 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    3900              0     1994 
+    4000     0.45049033     1994 
+Loop time of 0.45051 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:41 2020
+
+
+Pair  time (%) = 0.340799 (75.6474)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.9789e-05 (0.0154911)
+Outpt time (%) = 0.021468 (4.76528)
+Other time (%) = 0.0881728 (19.5718)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90941 ave 90941 max 90941 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90941
+Ave neighs/atom = 45.6073
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 45/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.45 0.05 0 1
+
+    set region laser property/atom Temp 900
+  9 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:41 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    4000              0     1994 
+    4100     0.44471615     1994 
+Loop time of 0.444736 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:42 2020
+
+
+Pair  time (%) = 0.334777 (75.2754)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.50197e-05 (0.0168684)
+Outpt time (%) = 0.0214321 (4.81906)
+Other time (%) = 0.0884523 (19.8887)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90934 ave 90934 max 90934 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90934
+Ave neighs/atom = 45.6038
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 46/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.46 0.05 0 1
+
+    set region laser property/atom Temp 900
+  9 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:42 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    4100              0     1994 
+    4200     0.44444804     1994 
+Loop time of 0.44448 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:42 2020
+
+
+Pair  time (%) = 0.336296 (75.6605)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.49252e-05 (0.0168568)
+Outpt time (%) = 0.0220817 (4.96798)
+Other time (%) = 0.0860279 (19.3547)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90914 ave 90914 max 90914 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90914
+Ave neighs/atom = 45.5938
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 47/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.47 0.05 0 1
+
+    set region laser property/atom Temp 900
+  9 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:42 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    4200              0     1994 
+    4300     0.50128849     1994 
+Loop time of 0.501313 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:43 2020
+
+
+Pair  time (%) = 0.3738 (74.5641)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000175887 (0.0350852)
+Outpt time (%) = 0.0222724 (4.4428)
+Other time (%) = 0.105065 (20.958)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90902 ave 90902 max 90902 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90902
+Ave neighs/atom = 45.5878
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 48/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.48 0.05 0 1
+
+    set region laser property/atom Temp 900
+  11 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:43 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    4300              0     1994 
+    4400     0.46927697     1994 
+Loop time of 0.469296 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:43 2020
+
+
+Pair  time (%) = 0.351035 (74.8004)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 9.66038e-05 (0.0205848)
+Outpt time (%) = 0.0216813 (4.61996)
+Other time (%) = 0.0964827 (20.559)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90885 ave 90885 max 90885 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90885
+Ave neighs/atom = 45.5792
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 49/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.49 0.05 0 1
+
+    set region laser property/atom Temp 900
+  12 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:43 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    4400              0     1994 
+    4500     0.55227267     1994 
+Loop time of 0.552292 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:44 2020
+
+
+Pair  time (%) = 0.418324 (75.7432)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000161172 (0.0291823)
+Outpt time (%) = 0.0216545 (3.92084)
+Other time (%) = 0.112153 (20.3068)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90867 ave 90867 max 90867 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90867
+Ave neighs/atom = 45.5702
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 50/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.5 0.05 0 1
+
+    set region laser property/atom Temp 900
+  14 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:44 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    4500              0     1994 
+    4600     0.43540456     1994 
+Loop time of 0.435442 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:44 2020
+
+
+Pair  time (%) = 0.32679 (75.0479)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.46608e-05 (0.017146)
+Outpt time (%) = 0.0215998 (4.96042)
+Other time (%) = 0.0869775 (19.9745)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90856 ave 90856 max 90856 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90856
+Ave neighs/atom = 45.5647
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 51/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.51 0.05 0 1
+
+    set region laser property/atom Temp 900
+  12 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:44 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    4600              0     1994 
+    4700     0.47646599     1994 
+Loop time of 0.476507 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:45 2020
+
+
+Pair  time (%) = 0.3578 (75.0882)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000118903 (0.024953)
+Outpt time (%) = 0.0218073 (4.57649)
+Other time (%) = 0.0967805 (20.3104)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90837 ave 90837 max 90837 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90837
+Ave neighs/atom = 45.5552
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 52/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.52 0.05 0 1
+
+    set region laser property/atom Temp 900
+  14 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:45 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    4700              0     1994 
+    4800     0.46500177     1994 
+Loop time of 0.465024 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:45 2020
+
+
+Pair  time (%) = 0.350042 (75.274)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 9.35308e-05 (0.0201131)
+Outpt time (%) = 0.0215263 (4.62907)
+Other time (%) = 0.0933621 (20.0768)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90823 ave 90823 max 90823 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90823
+Ave neighs/atom = 45.5481
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 53/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.53 0.05 0 1
+
+    set region laser property/atom Temp 900
+  15 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:45 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    4800              0     1994 
+    4900     0.45415943     1994 
+Loop time of 0.454183 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:45 2020
+
+
+Pair  time (%) = 0.344223 (75.7894)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.84278e-05 (0.0172679)
+Outpt time (%) = 0.0215651 (4.7481)
+Other time (%) = 0.088317 (19.4453)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90810 ave 90810 max 90810 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90810
+Ave neighs/atom = 45.5416
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 54/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.54 0.05 0 1
+
+    set region laser property/atom Temp 900
+  12 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:45 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    4900              0     1994 
+    5000     0.42537884     1994 
+Loop time of 0.425399 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:46 2020
+
+
+Pair  time (%) = 0.321969 (75.6864)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.19676e-05 (0.0145669)
+Outpt time (%) = 0.0215475 (5.06524)
+Other time (%) = 0.0818205 (19.2338)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90782 ave 90782 max 90782 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90782
+Ave neighs/atom = 45.5276
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 55/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.55 0.05 0 1
+
+    set region laser property/atom Temp 900
+  14 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:46 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    5000              0     1994 
+    5100     0.61846227     1994 
+Loop time of 0.618486 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:47 2020
+
+
+Pair  time (%) = 0.465121 (75.2031)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000197766 (0.0319758)
+Outpt time (%) = 0.0244918 (3.95996)
+Other time (%) = 0.128675 (20.8049)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90763 ave 90763 max 90763 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90763
+Ave neighs/atom = 45.5181
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 56/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.56 0.05 0 1
+
+    set region laser property/atom Temp 900
+  15 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:47 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    5100              0     1994 
+    5200     0.51966439     1994 
+Loop time of 0.519688 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:47 2020
+
+
+Pair  time (%) = 0.396177 (76.2337)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000136182 (0.0262046)
+Outpt time (%) = 0.0242558 (4.66738)
+Other time (%) = 0.0991188 (19.0728)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90743 ave 90743 max 90743 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90743
+Ave neighs/atom = 45.508
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 57/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.57 0.05 0 1
+
+    set region laser property/atom Temp 900
+  15 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:47 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    5200              0     1994 
+    5300     0.47668285     1994 
+Loop time of 0.476749 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:48 2020
+
+
+Pair  time (%) = 0.345896 (72.5529)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 9.30211e-05 (0.0195115)
+Outpt time (%) = 0.0368589 (7.73129)
+Other time (%) = 0.0939019 (19.6963)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90731 ave 90731 max 90731 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90731
+Ave neighs/atom = 45.502
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 58/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.58 0.05 0 1
+
+    set region laser property/atom Temp 900
+  16 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:48 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    5300              0     1994 
+    5400     0.55106803     1994 
+Loop time of 0.551102 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:48 2020
+
+
+Pair  time (%) = 0.423101 (76.7736)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000141244 (0.0256294)
+Outpt time (%) = 0.0220047 (3.99286)
+Other time (%) = 0.105855 (19.208)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90713 ave 90713 max 90713 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90713
+Ave neighs/atom = 45.493
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 59/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.59 0.05 0 1
+
+    set region laser property/atom Temp 900
+  14 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:48 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    5400              0     1994 
+    5500     0.73975521     1994 
+Loop time of 0.739783 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:49 2020
+
+
+Pair  time (%) = 0.557585 (75.3714)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000263079 (0.0355616)
+Outpt time (%) = 0.0411359 (5.56054)
+Other time (%) = 0.140799 (19.0325)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90697 ave 90697 max 90697 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90697
+Ave neighs/atom = 45.485
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 60/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.6 0.05 0 1
+
+    set region laser property/atom Temp 900
+  19 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:49 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    5500              0     1994 
+    5600     0.47195225     1994 
+Loop time of 0.471977 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:49 2020
+
+
+Pair  time (%) = 0.358963 (76.0551)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.89038e-05 (0.0167177)
+Outpt time (%) = 0.0217106 (4.59993)
+Other time (%) = 0.0912248 (19.3282)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90677 ave 90677 max 90677 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90677
+Ave neighs/atom = 45.4749
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 61/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.61 0.05 0 1
+
+    set region laser property/atom Temp 900
+  17 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:49 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    5600              0     1994 
+    5700     0.47085767     1994 
+Loop time of 0.470877 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:50 2020
+
+
+Pair  time (%) = 0.357862 (75.9989)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 9.3368e-05 (0.0198285)
+Outpt time (%) = 0.0214802 (4.56174)
+Other time (%) = 0.091442 (19.4195)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90651 ave 90651 max 90651 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90651
+Ave neighs/atom = 45.4619
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 62/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.62 0.05 0 1
+
+    set region laser property/atom Temp 900
+  17 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:50 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    5700              0     1994 
+    5800     0.42872293     1994 
+Loop time of 0.428747 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:50 2020
+
+
+Pair  time (%) = 0.324307 (75.6407)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.79357e-05 (0.0158452)
+Outpt time (%) = 0.0215439 (5.02485)
+Other time (%) = 0.0828281 (19.3186)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90629 ave 90629 max 90629 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90629
+Ave neighs/atom = 45.4509
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 63/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.63 0.05 0 1
+
+    set region laser property/atom Temp 900
+  17 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:50 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    5800              0     1994 
+    5900     0.44082435     1994 
+Loop time of 0.440853 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:51 2020
+
+
+Pair  time (%) = 0.332418 (75.4034)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.9952e-05 (0.0181358)
+Outpt time (%) = 0.021556 (4.88962)
+Other time (%) = 0.0867988 (19.6888)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90606 ave 90606 max 90606 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90606
+Ave neighs/atom = 45.4393
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 64/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.64 0.05 0 1
+
+    set region laser property/atom Temp 900
+  19 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:51 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    5900              0     1994 
+    6000     0.43292114     1994 
+Loop time of 0.432951 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:51 2020
+
+
+Pair  time (%) = 0.319215 (73.7299)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.49767e-05 (0.0150079)
+Outpt time (%) = 0.0286642 (6.62065)
+Other time (%) = 0.0850074 (19.6344)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90581 ave 90581 max 90581 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90581
+Ave neighs/atom = 45.4268
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 65/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.65 0.05 0 1
+
+    set region laser property/atom Temp 900
+  18 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:51 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    6000              0     1994 
+    6100     0.50827759     1994 
+Loop time of 0.508304 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:52 2020
+
+
+Pair  time (%) = 0.387344 (76.2033)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.00013903 (0.0273517)
+Outpt time (%) = 0.0216658 (4.26237)
+Other time (%) = 0.099155 (19.507)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90554 ave 90554 max 90554 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90554
+Ave neighs/atom = 45.4132
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 66/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.66 0.05 0 1
+
+    set region laser property/atom Temp 900
+  16 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:52 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    6100              0     1994 
+    6200     0.45891112     1994 
+Loop time of 0.458931 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:52 2020
+
+
+Pair  time (%) = 0.348178 (75.8671)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 8.07281e-05 (0.0175904)
+Outpt time (%) = 0.0214958 (4.68387)
+Other time (%) = 0.089177 (19.4314)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90528 ave 90528 max 90528 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90528
+Ave neighs/atom = 45.4002
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 67/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.67 0.05 0 1
+
+    set region laser property/atom Temp 900
+  15 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:52 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    6200              0     1994 
+    6300     0.42404091     1994 
+Loop time of 0.424065 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:53 2020
+
+
+Pair  time (%) = 0.318324 (75.0647)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.0856e-05 (0.0143506)
+Outpt time (%) = 0.0216464 (5.1045)
+Other time (%) = 0.0840345 (19.8164)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90503 ave 90503 max 90503 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90503
+Ave neighs/atom = 45.3877
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 68/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.68 0.05 0 1
+
+    set region laser property/atom Temp 900
+  10 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:53 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    6300              0     1994 
+    6400     0.42711019     1994 
+Loop time of 0.427131 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:53 2020
+
+
+Pair  time (%) = 0.320297 (74.9881)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.75285e-05 (0.0158098)
+Outpt time (%) = 0.0214902 (5.03129)
+Other time (%) = 0.0852761 (19.9649)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90484 ave 90484 max 90484 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90484
+Ave neighs/atom = 45.3781
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 69/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.69 0.05 0 1
+
+    set region laser property/atom Temp 900
+  11 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:53 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    6400              0     1994 
+    6500     0.43065066     1994 
+Loop time of 0.430673 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:54 2020
+
+
+Pair  time (%) = 0.320967 (74.5267)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.91379e-05 (0.0160535)
+Outpt time (%) = 0.0215212 (4.99711)
+Other time (%) = 0.0881161 (20.4601)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90462 ave 90462 max 90462 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90462
+Ave neighs/atom = 45.3671
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 70/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.7 0.05 0 1
+
+    set region laser property/atom Temp 900
+  12 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:54 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    6500              0     1994 
+    6600     0.51870606     1994 
+Loop time of 0.518818 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:54 2020
+
+
+Pair  time (%) = 0.385704 (74.3428)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000137656 (0.0265327)
+Outpt time (%) = 0.0266585 (5.13832)
+Other time (%) = 0.106318 (20.4923)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90434 ave 90434 max 90434 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90434
+Ave neighs/atom = 45.3531
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 71/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.71 0.05 0 1
+
+    set region laser property/atom Temp 900
+  11 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:54 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    6600              0     1994 
+    6700     0.52325361     1994 
+Loop time of 0.523278 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:55 2020
+
+
+Pair  time (%) = 0.394662 (75.4211)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000145279 (0.0277633)
+Outpt time (%) = 0.0219582 (4.19629)
+Other time (%) = 0.106512 (20.3548)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90406 ave 90406 max 90406 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90406
+Ave neighs/atom = 45.339
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 72/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.72 0.05 0 1
+
+    set region laser property/atom Temp 900
+  9 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:55 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    6700              0     1994 
+    6800     0.74108777     1994 
+Loop time of 0.741192 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:55 2020
+
+
+Pair  time (%) = 0.554882 (74.8636)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000255328 (0.0344483)
+Outpt time (%) = 0.032765 (4.42058)
+Other time (%) = 0.153289 (20.6814)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90382 ave 90382 max 90382 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90382
+Ave neighs/atom = 45.327
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 73/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.73 0.05 0 1
+
+    set region laser property/atom Temp 900
+  12 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:55 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    6800              0     1994 
+    6900     0.68263923     1994 
+Loop time of 0.682661 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:56 2020
+
+
+Pair  time (%) = 0.516539 (75.6654)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000231087 (0.0338509)
+Outpt time (%) = 0.0215943 (3.16325)
+Other time (%) = 0.144297 (21.1375)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90353 ave 90353 max 90353 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90353
+Ave neighs/atom = 45.3124
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 74/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.74 0.05 0 1
+
+    set region laser property/atom Temp 900
+  16 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:56 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    6900              0     1994 
+    7000     0.45271375     1994 
+Loop time of 0.452735 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:57 2020
+
+
+Pair  time (%) = 0.338989 (74.8758)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.9752e-05 (0.0176156)
+Outpt time (%) = 0.0267969 (5.9189)
+Other time (%) = 0.0868693 (19.1877)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90325 ave 90325 max 90325 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90325
+Ave neighs/atom = 45.2984
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 75/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.75 0.05 0 1
+
+    set region laser property/atom Temp 900
+  16 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:57 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    7000              0     1994 
+    7100     0.42231749     1994 
+Loop time of 0.422337 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:57 2020
+
+
+Pair  time (%) = 0.316128 (74.8521)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.59776e-05 (0.015622)
+Outpt time (%) = 0.021446 (5.07793)
+Other time (%) = 0.0846971 (20.0544)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90294 ave 90294 max 90294 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90294
+Ave neighs/atom = 45.2828
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 76/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.76 0.05 0 1
+
+    set region laser property/atom Temp 900
+  22 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:57 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    7100              0     1994 
+    7200     0.42875438     1994 
+Loop time of 0.428774 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:57 2020
+
+
+Pair  time (%) = 0.323377 (75.4189)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 5.85838e-05 (0.0136631)
+Outpt time (%) = 0.0214504 (5.00274)
+Other time (%) = 0.0838882 (19.5647)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90269 ave 90269 max 90269 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90269
+Ave neighs/atom = 45.2703
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 77/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.77 0.05 0 1
+
+    set region laser property/atom Temp 900
+  22 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:57 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    7200              0     1994 
+    7300     0.43488146     1994 
+Loop time of 0.4349 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:58 2020
+
+
+Pair  time (%) = 0.329078 (75.6673)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.962e-05 (0.0183076)
+Outpt time (%) = 0.0216135 (4.96976)
+Other time (%) = 0.0841297 (19.3446)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90247 ave 90247 max 90247 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90247
+Ave neighs/atom = 45.2593
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 78/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.78 0.05 0 1
+
+    set region laser property/atom Temp 900
+  20 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:58 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    7300              0     1994 
+    7400     0.53728198     1994 
+Loop time of 0.53731 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:58 2020
+
+
+Pair  time (%) = 0.392119 (72.9782)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000144363 (0.0268678)
+Outpt time (%) = 0.0344787 (6.41691)
+Other time (%) = 0.110568 (20.578)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90224 ave 90224 max 90224 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90224
+Ave neighs/atom = 45.2477
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 79/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.79 0.05 0 1
+
+    set region laser property/atom Temp 900
+  23 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:58 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    7400              0     1994 
+    7500     0.51783218     1994 
+Loop time of 0.517858 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:59 2020
+
+
+Pair  time (%) = 0.379257 (73.2358)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.00018165 (0.0350772)
+Outpt time (%) = 0.0273715 (5.28552)
+Other time (%) = 0.111047 (21.4436)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90191 ave 90191 max 90191 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90191
+Ave neighs/atom = 45.2312
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 80/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.8 0.05 0 1
+
+    set region laser property/atom Temp 900
+  18 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:59 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    7500              0     1994 
+    7600     0.42415943     1994 
+Loop time of 0.424179 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:49:59 2020
+
+
+Pair  time (%) = 0.318535 (75.0944)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.05679e-05 (0.0166363)
+Outpt time (%) = 0.0214568 (5.05844)
+Other time (%) = 0.0841169 (19.8305)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90162 ave 90162 max 90162 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90162
+Ave neighs/atom = 45.2166
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 81/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.81 0.05 0 1
+
+    set region laser property/atom Temp 900
+  16 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:49:59 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    7600              0     1994 
+    7700     0.43128879     1994 
+Loop time of 0.43131 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:50:00 2020
+
+
+Pair  time (%) = 0.323958 (75.1101)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 7.48182e-05 (0.0173467)
+Outpt time (%) = 0.0214302 (4.96864)
+Other time (%) = 0.0858475 (19.9039)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90140 ave 90140 max 90140 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90140
+Ave neighs/atom = 45.2056
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 82/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.82 0.05 0 1
+
+    set region laser property/atom Temp 900
+  14 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:50:00 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    7700              0     1994 
+    7800     0.42542395     1994 
+Loop time of 0.425442 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:50:00 2020
+
+
+Pair  time (%) = 0.318931 (74.9647)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.46363e-05 (0.0151927)
+Outpt time (%) = 0.021437 (5.03875)
+Other time (%) = 0.0850093 (19.9814)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90120 ave 90120 max 90120 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90120
+Ave neighs/atom = 45.1956
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 83/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.83 0.05 0 1
+
+    set region laser property/atom Temp 900
+  11 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:50:00 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    7800              0     1994 
+    7900     0.42159196     1994 
+Loop time of 0.421616 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:50:01 2020
+
+
+Pair  time (%) = 0.315066 (74.7282)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.9248e-05 (0.0164244)
+Outpt time (%) = 0.0215122 (5.10233)
+Other time (%) = 0.0849684 (20.153)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90098 ave 90098 max 90098 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90098
+Ave neighs/atom = 45.1846
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 84/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.84 0.05 0 1
+
+    set region laser property/atom Temp 900
+  14 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:50:01 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    7900              0     1994 
+    8000     0.42036131     1994 
+Loop time of 0.420384 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:50:01 2020
+
+
+Pair  time (%) = 0.31486 (74.8981)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.64511e-05 (0.0158072)
+Outpt time (%) = 0.0214218 (5.09578)
+Other time (%) = 0.084036 (19.9903)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90074 ave 90074 max 90074 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90074
+Ave neighs/atom = 45.1725
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 85/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.85 0.05 0 1
+
+    set region laser property/atom Temp 900
+  13 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:50:01 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    8000              0     1994 
+    8100     0.41921787     1994 
+Loop time of 0.419238 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:50:02 2020
+
+
+Pair  time (%) = 0.315545 (75.2663)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 6.11513e-05 (0.0145863)
+Outpt time (%) = 0.0216213 (5.15729)
+Other time (%) = 0.0820104 (19.5618)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90055 ave 90055 max 90055 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90055
+Ave neighs/atom = 45.163
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 86/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.86 0.05 0 1
+
+    set region laser property/atom Temp 900
+  13 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:50:02 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    8100              0     1994 
+    8200     0.45838232     1994 
+Loop time of 0.458403 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:50:02 2020
+
+
+Pair  time (%) = 0.345268 (75.3197)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 9.17552e-05 (0.0200163)
+Outpt time (%) = 0.0215989 (4.71177)
+Other time (%) = 0.0914447 (19.9485)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    90023 ave 90023 max 90023 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 90023
+Ave neighs/atom = 45.1469
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 87/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.87 0.05 0 1
+
+    set region laser property/atom Temp 900
+  14 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:50:02 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    8200              0     1994 
+    8300     0.46336192     1994 
+Loop time of 0.463381 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:50:02 2020
+
+
+Pair  time (%) = 0.347105 (74.9071)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000109387 (0.0236063)
+Outpt time (%) = 0.0217088 (4.68487)
+Other time (%) = 0.0944575 (20.3844)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    89994 ave 89994 max 89994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 89994
+Ave neighs/atom = 45.1324
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 88/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.88 0.05 0 1
+
+    set region laser property/atom Temp 900
+  15 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:50:02 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    8300              0     1994 
+    8400       0.522203     1994 
+Loop time of 0.522253 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:50:03 2020
+
+
+Pair  time (%) = 0.385497 (73.8142)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000164308 (0.0314614)
+Outpt time (%) = 0.02678 (5.12778)
+Other time (%) = 0.109812 (21.0265)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    89964 ave 89964 max 89964 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 89964
+Ave neighs/atom = 45.1174
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 89/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.89 0.05 0 1
+
+    set region laser property/atom Temp 900
+  14 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:50:03 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    8400              0     1994 
+    8500     0.57665861     1994 
+Loop time of 0.576723 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:50:04 2020
+
+
+Pair  time (%) = 0.417661 (72.4197)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.00018186 (0.0315333)
+Outpt time (%) = 0.0382074 (6.6249)
+Other time (%) = 0.120673 (20.9239)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    89950 ave 89950 max 89950 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 89950
+Ave neighs/atom = 45.1103
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+variable i loop 10 90
+
+    #variable y equal ${tab}
+    variable temp equal $i/100
+    variable temp equal 90/100
+
+    region laser cylinder z 0.5 ${temp} 0.05 0 1
+    region laser cylinder z 0.5 0.9 0.05 0 1
+
+    set region laser property/atom Temp 900
+  17 settings made for property/atom
+
+    run 100
+Setting up run at Tue Jun 16 14:50:04 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    8500              0     1994 
+    8600     0.71169874     1994 
+Loop time of 0.711732 on 1 procs for 100 steps with 1994 atoms, finish time Tue Jun 16 14:50:04 2020
+
+
+Pair  time (%) = 0.520303 (73.1038)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000257145 (0.0361294)
+Outpt time (%) = 0.0303512 (4.26441)
+Other time (%) = 0.160821 (22.5957)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    89923 ave 89923 max 89923 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 89923
+Ave neighs/atom = 45.0968
+Neighbor list builds = 0
+Dangerous builds = 0
+
+    region laser delete
+
+    next i
+    #next tab
+
+    jump SELF loop
+label loopend
+
+
+run  500
+Setting up run at Tue Jun 16 14:50:04 2020
+
+Memory usage per processor = 47.5358 Mbytes
+    Step            CPU    Atoms 
+    8600              0     1994 
+    8700     0.58167636     1994 
+    8800      1.0538507     1994 
+    8900      1.5477074     1994 
+    9000      2.0178224     1994 
+    9100      2.5916096     1994 
+Loop time of 2.59168 on 1 procs for 500 steps with 1994 atoms, finish time Tue Jun 16 14:50:07 2020
+
+
+Pair  time (%) = 1.92081 (74.1145)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 0.000806531 (0.0311201)
+Outpt time (%) = 0.130958 (5.05304)
+Other time (%) = 0.539104 (20.8014)
+
+Nlocal:    1994 ave 1994 max 1994 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    89895 ave 89895 max 89895 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 89895
+Ave neighs/atom = 45.0827
+Neighbor list builds = 0
+Dangerous builds = 0

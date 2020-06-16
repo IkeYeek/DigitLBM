@@ -1,0 +1,209 @@
+LIGGGHTS (Version LIGGGHTS-PUBLIC 3.8.0, compiled 2020-06-03-11:30:40 by emilien, git commit 6e87343906b56807d7e6e102f94210a8f69e2fe8)
+#Heat transfer example
+
+atom_style	granular
+atom_modify	map array
+boundary	m m m
+newton		off
+
+communicate	single vel yes
+
+units		si
+
+region		reg block -0.05 0.05 -0.05 0.05 0. 0.15 units box
+create_box	1 reg
+Created orthogonal box = (-0.05 -0.05 0) to (0.05 0.05 0.15)
+  1 by 1 by 1 MPI processor grid
+
+neighbor	0.002 bin
+neigh_modify	delay 0
+
+#Material properties required for new pair styles
+
+fix 		m1 all property/global youngsModulus peratomtype 5.e6
+fix 		m2 all property/global poissonsRatio peratomtype 0.45
+fix 		m3 all property/global coefficientRestitution peratomtypepair 1 0.7
+fix 		m4 all property/global coefficientFriction peratomtypepair 1 0.05
+#fix 		m5 all property/global characteristicVelocity scalar 2.
+
+
+#New pair style
+pair_style gran model hertz tangential history #Hertzian without cohesion
+pair_coeff	* *
+
+timestep	0.000025
+
+fix		gravi all gravity 9.81 vector 0.0 0.0 -1.0
+
+fix zwalls1 all wall/gran model hertz tangential history primitive type 1  zplane 0.0
+fix zwalls2 all wall/gran model hertz tangential history primitive type 1  zplane 0.15
+fix cylwalls all wall/gran model hertz tangential history primitive type 1  zcylinder 0.05 0. 0.
+
+#heat transfer
+fix 		ftco all property/global thermalConductivity peratomtype 100.
+fix 		ftca all property/global thermalCapacity peratomtype 10.
+fix             heattransfer all heat/gran initial_temperature 300.
+
+#region of insertion
+region		bc cylinder z 0. 0. 0.045 0.00 0.15 units box
+
+#particle distributions and insertion
+fix		pts1 all particletemplate/sphere 15485863 atom_type 1 density constant 8000 radius constant 0.004
+fix		pdd1 all particledistribution/discrete 15485867 1 pts1 1.0
+
+fix		ins all insert/pack seed 32452843 distributiontemplate pdd1 vel constant 0. 0. -0.3 		insert_every once overlapcheck yes all_in yes volumefraction_region 0.25 region bc
+
+#apply nve integration to all particles
+fix		integr all nve/sphere
+
+#output settings, include total thermal energy
+compute		rke all erotate/sphere
+thermo_style	custom step atoms ke c_rke f_heattransfer vol
+thermo		1000
+thermo_modify	lost ignore norm no
+
+#insert the first particles so that dump is not empty
+run		1
+Setting up run at Wed Jun  3 17:14:49 2020
+
+INFO: Particle insertion ins: inserting every 0 steps
+Memory usage per processor = 4.33364 Mbytes
+    Step    Atoms         KinEng            rke       heattran         Volume 
+       0        0              0              0              0         0.0015 
+INFO: Particle insertion ins: inserted 890 particle templates (mass 1.908748e+00) at step 1
+ - a total of 890 particle templates (mass 1.908748e+00) inserted so far.
+       1      890    0.085963889              0      5726.2438         0.0015 
+Loop time of 0.035559 on 1 procs for 1 steps with 890 atoms, finish time Wed Jun  3 17:14:49 2020
+
+
+Pair  time (%) = 0.000483959 (1.361)
+Neigh time (%) = 0.00397094 (11.1672)
+Comm  time (%) = 8.3544e-05 (0.234944)
+Outpt time (%) = 0.000406598 (1.14344)
+Other time (%) = 0.030614 (86.0934)
+
+Nlocal:    890 ave 890 max 890 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    1377 ave 1377 max 1377 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 1377
+Ave neighs/atom = 1.54719
+Neighbor list builds = 1
+Dangerous builds = 0
+dump		dmp all custom/vtk 800 post/heatGran_*.vtk id type type x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius f_Temp[0] f_heatFlux[0]
+dump		ovito all custom 1000 post/heat.dump id type mass radius element xs ys zs x y z ix iy iz vx vy vz fx fy fz omegax omegay omegaz radius f_Temp[0] f_heatFlux[0]
+unfix		ins
+
+#let the particles settle
+run		20000 upto
+Setting up run at Wed Jun  3 17:14:49 2020
+
+Memory usage per processor = 8.46413 Mbytes
+    Step    Atoms         KinEng            rke       heattran         Volume 
+       1      890    0.085963889              0      5726.2438         0.0015 
+    1000      890     0.24827796  0.00022041163      5726.2438         0.0015 
+    2000      890      0.4310526   0.0010095459      5726.2438         0.0015 
+    3000      890     0.49526899   0.0024747088      5726.2438         0.0015 
+    4000      890     0.31586477   0.0035252599      5726.2438         0.0015 
+    5000      890    0.027567867   0.0029390079      5726.2438         0.0015 
+    6000      890   0.0070080804   0.0017166111      5726.2438         0.0015 
+    7000      890   0.0063160632   0.0011228234      5726.2438         0.0015 
+    8000      890   0.0040208534  0.00067254899      5726.2438         0.0015 
+    9000      890   0.0018449852  0.00036272343      5726.2438         0.0015 
+   10000      890  0.00051640311  0.00019950714      5726.2438         0.0015 
+   11000      890  0.00025739941  0.00010329878      5726.2438         0.0015 
+   12000      890  0.00015870349  5.3061439e-05      5726.2438         0.0015 
+   13000      890  4.5130974e-05  2.5805459e-05      5726.2438         0.0015 
+   14000      890   2.057305e-05  1.2246036e-05      5726.2438         0.0015 
+   15000      890  1.0229663e-05  6.1239195e-06      5726.2438         0.0015 
+   16000      890  1.1836456e-05  6.5531492e-06      5726.2438         0.0015 
+   17000      890   1.199114e-05  6.2253346e-06      5726.2438         0.0015 
+   18000      890  1.4676598e-05  7.0850812e-06      5726.2438         0.0015 
+   19000      890  3.7770954e-06  4.6853468e-06      5726.2438         0.0015 
+   20000      890  5.3031725e-07  1.3357401e-06      5726.2438         0.0015 
+Loop time of 17.6049 on 1 procs for 19999 steps with 890 atoms, finish time Wed Jun  3 17:15:07 2020
+
+
+Pair  time (%) = 10.8476 (61.6167)
+Neigh time (%) = 0.183984 (1.04507)
+Comm  time (%) = 0.0207665 (0.117958)
+Outpt time (%) = 0.545821 (3.10038)
+Other time (%) = 6.00679 (34.1199)
+
+Nlocal:    890 ave 890 max 890 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    4118 ave 4118 max 4118 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 4118
+Ave neighs/atom = 4.62697
+Neighbor list builds = 176
+Dangerous builds = 0
+
+#set particle temperature for half the bed
+region		halfbed block 0 INF INF INF INF INF units box
+set             region halfbed property/atom Temp 800.
+  445 settings made for property/atom
+
+#run to see heat transfer
+run		50000 upto
+Setting up run at Wed Jun  3 17:15:07 2020
+
+Memory usage per processor = 10.082 Mbytes
+    Step    Atoms         KinEng            rke       heattran         Volume 
+   20000      890  5.3031725e-07  1.3357401e-06      10498.114         0.0015 
+   21000      890   1.931194e-06  2.7194871e-07      10498.114         0.0015 
+   22000      890  2.1622657e-07  1.1871934e-07      10498.114         0.0015 
+   23000      890   4.139228e-08  6.9698787e-08      10498.114         0.0015 
+   24000      890  2.9822986e-08   5.624103e-08      10498.114         0.0015 
+   25000      890  2.9998078e-08  5.4893623e-08      10498.114         0.0015 
+   26000      890  2.8354189e-08  5.4403467e-08      10498.114         0.0015 
+   27000      890  2.2910201e-08   4.628973e-08      10498.114         0.0015 
+   28000      890  2.1016702e-08   4.601871e-08      10498.114         0.0015 
+   29000      890   2.043904e-08  4.5550665e-08      10498.114         0.0015 
+   30000      890  2.0144661e-08  4.5453503e-08      10498.114         0.0015 
+   31000      890  1.9989362e-08   4.547914e-08      10498.114         0.0015 
+   32000      890  1.9654556e-08  4.5440639e-08      10498.114         0.0015 
+   33000      890  1.9363505e-08  4.5408868e-08      10498.114         0.0015 
+   34000      890  1.6477736e-08  4.1039059e-08      10498.114         0.0015 
+   35000      890  1.0931865e-08  3.1686346e-08      10498.114         0.0015 
+   36000      890  1.1265562e-08  3.0655356e-08      10498.114         0.0015 
+   37000      890  1.1222353e-08  3.0644949e-08      10498.114         0.0015 
+   38000      890   1.113119e-08  3.0639608e-08      10498.114         0.0015 
+   39000      890   1.105555e-08  3.0633121e-08      10498.114         0.0015 
+   40000      890  1.0929592e-08  3.0446528e-08      10498.114         0.0015 
+   41000      890  1.0904422e-08  3.0432211e-08      10498.114         0.0015 
+   42000      890  1.0932575e-08   3.044067e-08      10498.114         0.0015 
+   43000      890  1.0910567e-08  3.0435113e-08      10498.114         0.0015 
+   44000      890  1.0899619e-08  3.0433998e-08      10498.114         0.0015 
+   45000      890  9.0295873e-09   2.692196e-08      10498.114         0.0015 
+   46000      890  9.0960584e-09  2.6788158e-08      10498.114         0.0015 
+   47000      890  9.0931038e-09  2.6785955e-08      10498.114         0.0015 
+   48000      890  9.0915381e-09  2.6785102e-08      10498.114         0.0015 
+   49000      890  8.3490816e-10  2.0441102e-08      10498.114         0.0015 
+   50000      890  5.7112432e-09   2.069405e-08      10498.114         0.0015 
+Loop time of 27.3214 on 1 procs for 30000 steps with 890 atoms, finish time Wed Jun  3 17:15:34 2020
+
+
+Pair  time (%) = 17.2378 (63.0927)
+Neigh time (%) = 0.00112072 (0.004102)
+Comm  time (%) = 0.013679 (0.0500671)
+Outpt time (%) = 1.0068 (3.68501)
+Other time (%) = 9.06198 (33.1681)
+
+Nlocal:    890 ave 890 max 890 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    4120 ave 4120 max 4120 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 4120
+Ave neighs/atom = 4.62921
+Neighbor list builds = 1
+Dangerous builds = 0
