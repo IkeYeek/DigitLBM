@@ -18,7 +18,7 @@ Pour installer LIGGGHTS suivez ces etapes en cas d'erreur se referer à la docum
 
 https://www.cfdem.com/media/DEM/docu/Manual.html
 
-Dans cette installation je prends en compte que vous partez du repertoire home c'st à dire faites 
+Dans cette installation je prends en compte que vous partez du repertoire home c'est à dire faites en premier
 
 <code> cd ~ </code>
 
@@ -38,7 +38,7 @@ Ubuntu 17.10:
   
 Troisieme etape : 
 -
-  <code> cd LIGGGHTS-PUBLIC/src/ </code>
+  <code> cd ~/LIGGGHTS-PUBLIC/src/ </code>
   
 Quatrieme etape : 
 -
