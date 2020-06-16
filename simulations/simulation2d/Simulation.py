@@ -99,7 +99,7 @@ class Simulation(object):
         offset = round((spot_size - 1) / 2)
         for i in range(x - offset, x, 1):
             for j in range(y - offset, y, 1):
-                if (i - x) ** 2 + (j - y) ** 2 < (spot_size / 2) ** 2:
+                if (i - x) * (i - x) + (j - y) * (j - y) < (spot_size / 2) * (spot_size / 2):
                     x_symetrique = x - (i - x)
                     y_symetrique = y - (j - y)
                     self.apply(i, j)

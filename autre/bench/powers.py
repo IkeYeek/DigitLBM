@@ -5,7 +5,7 @@ from autre.bench.benchmark import benchmark
 
 
 def pow():
-    for i in range (999999):
+    for i in range(999999):
         n = random.random()
         k = n ** 2
 

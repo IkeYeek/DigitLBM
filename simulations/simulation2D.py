@@ -26,7 +26,7 @@ def main():
     # On instancie le grid avec sa taille
     grid = Grid(2000)
     # On génère le lit de poudre en précisant (pour cette implémentation) les tailles
-    benchmark(lambda: grid.populate(1, 5), "générer le nid de poudre")
+    benchmark(lambda: grid.populate(1, 3), "générer le nid de poudre")
 
     # On instancie le bridge qui permet de récupérer les fichiers .csv et de les convertir en mouvements
     lmb = LaserMoovesBridge('./autre/diamant.csv', grid)
@@ -39,8 +39,8 @@ def main():
     # On rend l'image
     img = ImageRenderer(grid, simulation.get_params())
     benchmark(lambda: img.POC(), "rendre l'image finale")
-    # img.save()
-    img.show()
+    img.save()
+    # img.show()
     ##########
     def show_grid():
         grid_representation = grid.show_grid()
